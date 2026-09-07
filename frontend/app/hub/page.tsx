@@ -56,7 +56,7 @@ export default function HubPage() {
             style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}>
             <BookOpen size={16} className="text-white" />
           </div>
-          <span className="font-bold gradient-text">NoteVault</span>
+          <span className="font-bold gradient-text">Scholr</span>
         </div>
       </nav>
 

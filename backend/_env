@@ -8,8 +8,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # ──── AWS S3 ──────────────────────────────────────────────────────────────────
-AWS_ACCESS_KEY_ID=minioadmin
-AWS_SECRET_ACCESS_KEY=minioadmin
+AWS_ACCESS_KEY_ID=paste your AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY=paste your secret access key 
 AWS_REGION=us-east-1
 AWS_ENDPOINT_URL=http://localhost:9000
 S3_BUCKET_NAME=college-notes-uploads

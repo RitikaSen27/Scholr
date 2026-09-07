@@ -93,7 +93,7 @@ export default function DashboardPage() {
               style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}>
               <BookOpen size={18} className="text-white" />
             </div>
-            <span className="font-bold text-lg gradient-text">NoteVault</span>
+            <span className="font-bold text-lg gradient-text">Scholr</span>
           </div>
           <div className="flex items-center gap-3">
             <motion.button

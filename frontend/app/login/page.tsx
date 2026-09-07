@@ -61,7 +61,7 @@ export default function LoginPage() {
             style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}>
             <BookOpen size={28} className="text-white" />
           </div>
-          <h1 className="text-3xl font-bold gradient-text">NoteVault</h1>
+          <h1 className="text-3xl font-bold gradient-text">Scholr</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
             Sign in to your account
           </p>

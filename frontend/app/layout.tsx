@@ -7,7 +7,7 @@ import { WebSocketProvider } from "@/components/WebSocketProvider";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "NoteVault — College Notes Sharing Platform",
+  title: "Scholr — College Notes Sharing Platform",
   description:
     "Upload, discover, and share college notes. Earn badges, build streaks, and ace your exams.",
   keywords: ["college notes", "study materials", "note sharing", "academic"],
