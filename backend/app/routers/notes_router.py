@@ -13,7 +13,7 @@ from app.services import badge_service, streak_service
 from app.services.s3_service import generate_presigned_url, upload_file
 from app.websocket_manager import manager
 
-router = APIRouter(prefix="/api/notes", tags=["notes"])
+router = APIRouter(prefix="/api/backend/api/notes", tags=["notes"])
 
 ALLOWED_CONTENT_TYPES = {
     "application/pdf",
