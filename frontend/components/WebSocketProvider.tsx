@@ -6,7 +6,9 @@ import type { WSMessage } from "@/types";
 import toast from "react-hot-toast";
 import { Trophy, Zap, Upload } from "lucide-react";
 
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
+const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+const wsProtocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss:" : "ws:";
+const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || (isLocal || typeof window === "undefined" ? "ws://127.0.0.1:8000" : `${wsProtocol}//${window.location.host}/api/backend`);
 const RECONNECT_DELAY_MS = 3000;
 
 const BADGE_LABELS: Record<string, string> = {
