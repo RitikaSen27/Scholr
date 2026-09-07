@@ -12,7 +12,7 @@ from app.auth import (
 )
 from app.database import get_db
 
-router = APIRouter(prefix="/api/auth", tags=["auth"])
+router = APIRouter(prefix="/api/backend/api/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=schemas.AuthResponse, status_code=201)
