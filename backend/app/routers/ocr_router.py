@@ -3,7 +3,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException
 from app.schemas import OCRResponse
 from app.services.ocr_service import extract_student_id
 
-router = APIRouter(prefix="/api/ocr", tags=["ocr"])
+router = APIRouter(prefix="/api/backend/api/ocr", tags=["ocr"])
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/bmp"}
 
