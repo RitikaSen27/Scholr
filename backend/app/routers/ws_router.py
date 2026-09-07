@@ -8,7 +8,7 @@ from app import models
 from app.websocket_manager import manager
 
 logger = logging.getLogger(__name__)
-router = APIRouter(tags=["websocket"])
+router = APIRouter(prefix="/api/backend", tags=["websocket"])
 
 
 @router.websocket("/ws/{user_id}")
