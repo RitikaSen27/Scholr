@@ -72,7 +72,7 @@ export default function NotesPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
-      <div className="orb w-96 h-96 bg-cyan-700 -top-20 -right-20 opacity-10" />
+      <div className="orb w-96 h-96 bg-rose-700 -top-20 -right-20 opacity-10" />
 
       {/* Nav */}
       <nav className="sticky top-0 z-50 glass border-b px-6 py-4" style={{ borderColor: "var(--border-subtle)" }}>
@@ -83,7 +83,7 @@ export default function NotesPage() {
           </button>
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #06b6d4, #0891b2)" }}>
+              style={{ background: "linear-gradient(135deg, #ff7a6b, #e85f50)" }}>
               <Download size={14} className="text-white" />
             </div>
             <span className="font-semibold" style={{ color: "var(--text-primary)" }}>Browse Notes</span>
@@ -96,7 +96,7 @@ export default function NotesPage() {
 
       <main className="max-w-4xl mx-auto px-6 py-10 relative z-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-3xl font-bold mb-1 gradient-text-cyan">Notes Library</h1>
+          <h1 className="font-display text-3xl font-bold mb-1 gradient-text-cyan">Notes Library</h1>
           <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
             All notes organized by subject. Latest uploads always on top.
           </p>
@@ -121,7 +121,7 @@ export default function NotesPage() {
 
           {loading ? (
             <div className="flex justify-center py-20">
-              <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : filtered.length === 0 ? (
             <motion.div
@@ -233,7 +233,7 @@ export default function NotesPage() {
                                   onClick={() => handleDownload(note)}
                                   disabled={downloading === note.id}
                                   className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                                  style={{ background: "linear-gradient(135deg, #06b6d4, #0891b2)", color: "white" }}
+                                  style={{ background: "linear-gradient(135deg, #ff7a6b, #e85f50)", color: "white" }}
                                 >
                                   {downloading === note.id
                                     ? <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />

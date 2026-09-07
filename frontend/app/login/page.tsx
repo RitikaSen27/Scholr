@@ -45,9 +45,9 @@ export default function LoginPage() {
       style={{ background: "var(--gradient-hero)" }}
     >
       {/* Background orbs */}
-      <div className="orb w-96 h-96 bg-purple-600 -top-20 -left-20" />
-      <div className="orb w-80 h-80 bg-pink-600 bottom-10 right-10" />
-      <div className="orb w-64 h-64 bg-cyan-600 top-1/2 left-1/3" />
+      <div className="orb w-96 h-96 bg-amber-600 -top-20 -left-20" />
+      <div className="orb w-80 h-80 bg-rose-600 bottom-10 right-10" />
+      <div className="orb w-64 h-64 bg-rose-600 top-1/2 left-1/3" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -58,10 +58,10 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 glow-purple"
-            style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}>
+            style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)" }}>
             <BookOpen size={28} className="text-white" />
           </div>
-          <h1 className="text-3xl font-bold gradient-text">Scholr</h1>
+          <h1 className="font-display text-3xl font-bold gradient-text">Scholr</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
             Sign in to your account
           </p>
@@ -108,7 +108,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPass(!showPass)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors hover:text-purple-400"
+                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors hover:text-amber-400"
                 style={{ color: "var(--text-muted)" }}
               >
                 {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -124,7 +124,7 @@ export default function LoginPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="w-full py-3 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-            style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
+            style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)" }}
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

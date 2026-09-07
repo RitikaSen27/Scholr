@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Fraunces } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import { WebSocketProvider } from "@/components/WebSocketProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  weight: ["500", "600"],
+});
 
 export const metadata: Metadata = {
   title: "Scholr — College Notes Sharing Platform",
@@ -20,20 +25,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${fraunces.variable} font-sans antialiased`} suppressHydrationWarning>
         <WebSocketProvider>
           {children}
           <Toaster
             position="top-right"
             toastOptions={{
               style: {
-                background: "#1a1a2e",
-                color: "#e2e8f0",
-                border: "1px solid rgba(139,92,246,0.3)",
+                background: "#242a52",
+                color: "#f4f1e8",
+                border: "1px solid rgba(245,185,66,0.3)",
                 borderRadius: "12px",
               },
               success: {
-                iconTheme: { primary: "#8b5cf6", secondary: "#1a1a2e" },
+                iconTheme: { primary: "#f5b942", secondary: "#242a52" },
               },
             }}
           />

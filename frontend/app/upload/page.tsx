@@ -111,7 +111,7 @@ export default function UploadPage() {
             <CheckCircle size={36} className="text-emerald-400" />
           </motion.div>
 
-          <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
+          <h2 className="font-display text-2xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
             Note Uploaded! 🎉
           </h2>
           <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
@@ -135,7 +135,7 @@ export default function UploadPage() {
               whileHover={{ scale: 1.02 }}
               onClick={() => { setSuccess(null); setFile(null); setForm({ subject_code: "", subject_name: "", professor: "", tag: "" }); }}
               className="w-full py-3 rounded-xl font-semibold text-white"
-              style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
+              style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)" }}
             >
               Upload Another
             </motion.button>
@@ -154,7 +154,7 @@ export default function UploadPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
-      <div className="orb w-96 h-96 bg-purple-700 -top-20 -right-20 opacity-10" />
+      <div className="orb w-96 h-96 bg-amber-700 -top-20 -right-20 opacity-10" />
 
       {/* Nav */}
       <nav className="sticky top-0 z-50 glass border-b px-6 py-4" style={{ borderColor: "var(--border-subtle)" }}>
@@ -165,7 +165,7 @@ export default function UploadPage() {
           </button>
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}>
+              style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)" }}>
               <Upload size={14} className="text-white" />
             </div>
             <span className="font-semibold" style={{ color: "var(--text-primary)" }}>Upload Notes</span>
@@ -175,7 +175,7 @@ export default function UploadPage() {
 
       <main className="max-w-2xl mx-auto px-6 py-10 relative z-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-3xl font-bold mb-1 gradient-text">Upload Notes</h1>
+          <h1 className="font-display text-3xl font-bold mb-1 gradient-text">Upload Notes</h1>
           <p className="text-sm mb-8" style={{ color: "var(--text-secondary)" }}>
             Share your knowledge. Help your peers succeed.
           </p>
@@ -270,7 +270,7 @@ export default function UploadPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="w-full py-4 rounded-xl font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
-              style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
+              style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)" }}
             >
               {uploading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

@@ -96,8 +96,8 @@ function handleMessage(msg: WSMessage) {
           icon: "🔥",
           duration: 3000,
           style: {
-            background: "rgba(251,146,60,0.15)",
-            border: "1px solid rgba(251,146,60,0.4)",
+            background: "rgba(245,185,66,0.15)",
+            border: "1px solid rgba(245,185,66,0.4)",
           },
         }
       );

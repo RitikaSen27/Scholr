@@ -94,8 +94,8 @@ export default function RegisterPage() {
       style={{ background: "var(--gradient-hero)" }}
     >
       {/* Orbs */}
-      <div className="orb w-96 h-96 bg-violet-600 -top-32 -right-20" />
-      <div className="orb w-72 h-72 bg-cyan-600 bottom-0 left-0" />
+      <div className="orb w-96 h-96 bg-amber-600 -top-32 -right-20" />
+      <div className="orb w-72 h-72 bg-rose-600 bottom-0 left-0" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -107,11 +107,11 @@ export default function RegisterPage() {
         <div className="flex flex-col items-center mb-8">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 glow-purple"
-            style={{ background: "linear-gradient(135deg, #8b5cf6, #06b6d4)" }}
+            style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)" }}
           >
             <BookOpen size={28} className="text-white" />
           </div>
-          <h1 className="text-3xl font-bold gradient-text-cyan">Scholr</h1>
+          <h1 className="font-display text-3xl font-bold gradient-text-cyan">Scholr</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
             Create your student account
           </p>
@@ -124,7 +124,7 @@ export default function RegisterPage() {
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all"
                 style={{
-                  background: step >= s ? "linear-gradient(135deg, #8b5cf6, #ec4899)" : "rgba(255,255,255,0.08)",
+                  background: step >= s ? "linear-gradient(135deg, #f5b942, #ff7a6b)" : "rgba(255,255,255,0.08)",
                   color: step >= s ? "white" : "var(--text-muted)",
                 }}
               >
@@ -150,7 +150,7 @@ export default function RegisterPage() {
               className="space-y-5"
             >
               <div>
-                <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+                <h2 className="font-display text-lg font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
                   Upload Your Student ID Card
                 </h2>
                 <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
@@ -198,7 +198,7 @@ export default function RegisterPage() {
 
                 {uploading && (
                   <div className="mt-4 flex justify-center">
-                    <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
                   </div>
                 )}
               </motion.div>
@@ -243,11 +243,11 @@ export default function RegisterPage() {
               className="space-y-4"
             >
               <div>
-                <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+                <h2 className="font-display text-lg font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
                   Complete Your Profile
                 </h2>
                 <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                  Student ID: <span className="font-mono text-purple-400">{form.student_id || "—"}</span>{" "}
+                  Student ID: <span className="font-mono text-amber-400">{form.student_id || "—"}</span>{" "}
                   (locked by OCR)
                 </p>
               </div>
@@ -319,7 +319,7 @@ export default function RegisterPage() {
                     style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-primary)", border: "1px solid var(--border-subtle)" }}
                   />
                   <button type="button" onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:text-purple-400 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:text-amber-400 transition-colors"
                     style={{ color: "var(--text-muted)" }}>
                     {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
@@ -333,7 +333,7 @@ export default function RegisterPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full py-3 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg, #8b5cf6, #06b6d4)" }}
+                style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)" }}
               >
                 {registering ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

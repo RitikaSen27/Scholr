@@ -28,9 +28,9 @@ export default function HubPage() {
       style={{ background: "var(--gradient-hero)" }}
     >
       {/* Background orbs */}
-      <div className="orb w-[600px] h-[600px] bg-purple-700 -top-60 -right-60" />
-      <div className="orb w-96 h-96 bg-pink-700 bottom-0 -left-20" />
-      <div className="orb w-64 h-64 bg-cyan-700 top-1/3 left-1/4" />
+      <div className="orb w-[600px] h-[600px] bg-amber-700 -top-60 -right-60" />
+      <div className="orb w-96 h-96 bg-rose-700 bottom-0 -left-20" />
+      <div className="orb w-64 h-64 bg-rose-700 top-1/3 left-1/4" />
 
       {/* Grid overlay */}
       <div className="absolute inset-0 opacity-5"
@@ -45,7 +45,7 @@ export default function HubPage() {
         <button
           id="hub-back-btn"
           onClick={() => router.push("/dashboard")}
-          className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-purple-400"
+          className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-amber-400"
           style={{ color: "var(--text-secondary)" }}
         >
           <ArrowLeft size={16} />
@@ -53,7 +53,7 @@ export default function HubPage() {
         </button>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}>
+            style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)" }}>
             <BookOpen size={16} className="text-white" />
           </div>
           <span className="font-bold gradient-text">Scholr</span>
@@ -76,7 +76,7 @@ export default function HubPage() {
             </span>
             <div className="h-px flex-1 max-w-20" style={{ background: "linear-gradient(to left, transparent, rgba(139,92,246,0.5))" }} />
           </div>
-          <h1 className="text-5xl md:text-7xl font-black mb-4">
+          <h1 className="font-display text-5xl md:text-7xl font-black mb-4">
             <span className="gradient-text">Share.</span>{" "}
             <span style={{ color: "var(--text-primary)" }}>Learn.</span>{" "}
             <span className="gradient-text-cyan">Grow.</span>
@@ -113,12 +113,12 @@ export default function HubPage() {
                 whileHover={{ rotate: [0, -10, 10, 0] }}
                 transition={{ duration: 0.5 }}
                 className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 glow-purple"
-                style={{ background: "linear-gradient(135deg, #8b5cf6, #7c3aed)" }}
+                style={{ background: "linear-gradient(135deg, #f5b942, #d99a2b)" }}
               >
                 <Upload size={30} className="text-white" />
               </motion.div>
 
-              <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
+              <h2 className="font-display text-2xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
                 Upload Notes
               </h2>
               <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
@@ -171,12 +171,12 @@ export default function HubPage() {
                 whileHover={{ rotate: [0, -10, 10, 0] }}
                 transition={{ duration: 0.5 }}
                 className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 glow-cyan"
-                style={{ background: "linear-gradient(135deg, #06b6d4, #0891b2)" }}
+                style={{ background: "linear-gradient(135deg, #ff7a6b, #e85f50)" }}
               >
                 <Download size={30} className="text-white" />
               </motion.div>
 
-              <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
+              <h2 className="font-display text-2xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
                 Download Notes
               </h2>
               <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>

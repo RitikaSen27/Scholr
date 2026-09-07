@@ -82,15 +82,15 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen relative" style={{ background: "var(--bg-primary)" }}>
       {/* Ambient orbs */}
-      <div className="orb w-[500px] h-[500px] bg-purple-700 -top-40 -right-40 opacity-10" />
-      <div className="orb w-72 h-72 bg-cyan-700 bottom-20 left-10 opacity-10" />
+      <div className="orb w-[500px] h-[500px] bg-amber-700 -top-40 -right-40 opacity-10" />
+      <div className="orb w-72 h-72 bg-rose-700 bottom-20 left-10 opacity-10" />
 
       {/* Navbar */}
       <nav className="sticky top-0 z-50 glass border-b" style={{ borderColor: "var(--border-subtle)" }}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}>
+              style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)" }}>
               <BookOpen size={18} className="text-white" />
             </div>
             <span className="font-bold text-lg gradient-text">Scholr</span>
@@ -100,7 +100,7 @@ export default function DashboardPage() {
               whileHover={{ scale: 1.05 }}
               onClick={() => router.push("/hub")}
               className="px-4 py-2 rounded-xl text-sm font-medium transition-all"
-              style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)", color: "white" }}
+              style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)", color: "white" }}
             >
               Open Hub
             </motion.button>
@@ -119,7 +119,7 @@ export default function DashboardPage() {
       <main className="max-w-6xl mx-auto px-6 py-10 space-y-10">
         {/* Welcome */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-4xl font-bold">
+          <h1 className="font-display text-4xl font-bold">
             Welcome back, <span className="gradient-text">{user.name.split(" ")[0]}</span> 👋
           </h1>
           <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
@@ -133,9 +133,9 @@ export default function DashboardPage() {
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
         >
           {[
-            { icon: <User size={18} />, label: "Name", value: user.name.split(" ")[0], color: "#8b5cf6" },
-            { icon: <Building size={18} />, label: "College", value: user.college.split(" ")[0], color: "#06b6d4" },
-            { icon: <GraduationCap size={18} />, label: "Stream", value: user.stream, color: "#ec4899" },
+            { icon: <User size={18} />, label: "Name", value: user.name.split(" ")[0], color: "#f5b942" },
+            { icon: <Building size={18} />, label: "College", value: user.college.split(" ")[0], color: "#ff7a6b" },
+            { icon: <GraduationCap size={18} />, label: "Stream", value: user.stream, color: "#ff7a6b" },
             { icon: <Calendar size={18} />, label: "Year", value: `${user.year} Year`, color: "#f59e0b" },
             { icon: <Upload size={18} />, label: "Uploads", value: user.total_uploads, color: "#10b981" },
             { icon: <Download size={18} />, label: "Downloads", value: user.total_downloads, color: "#6366f1" },
@@ -173,7 +173,7 @@ export default function DashboardPage() {
                 <Flame size={20} className="text-orange-400" />
               </div>
               <div>
-                <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>Daily Streak</h2>
+                <h2 className="font-display font-semibold" style={{ color: "var(--text-primary)" }}>Daily Streak</h2>
                 <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Upload every day to keep it alive</p>
               </div>
             </div>
@@ -224,7 +224,7 @@ export default function DashboardPage() {
                 <TrendingUp size={20} style={{ color: "var(--accent-purple)" }} />
               </div>
               <div>
-                <h2 className="font-semibold" style={{ color: "var(--text-primary)" }}>Quick Actions</h2>
+                <h2 className="font-display font-semibold" style={{ color: "var(--text-primary)" }}>Quick Actions</h2>
                 <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Jump right in</p>
               </div>
             </div>
@@ -236,7 +236,7 @@ export default function DashboardPage() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => router.push("/upload")}
                 className="w-full py-3 rounded-xl font-semibold text-white flex items-center gap-3 px-4 transition-all"
-                style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
+                style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)" }}
               >
                 <Upload size={18} />
                 Upload Notes
@@ -266,7 +266,7 @@ export default function DashboardPage() {
               <Trophy size={20} className="text-yellow-400" />
             </div>
             <div>
-              <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>Achievements</h2>
+              <h2 className="font-display text-xl font-bold" style={{ color: "var(--text-primary)" }}>Achievements</h2>
               <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
                 {earnedBadgeTypes.size}/3 badges unlocked
               </p>
