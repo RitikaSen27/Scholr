@@ -1,0 +1,21 @@
+# Node / Frontend
+node_modules/
+.next/
+out/
+build/
+.env.local
+
+# Python / Backend
+venv/
+env/
+__pycache__/
+*.pyc
+.env
+
+# MacOS junk
+__MACOSX/
+.DS_Store
+
+# Temporary files
+*.log
+.zip
