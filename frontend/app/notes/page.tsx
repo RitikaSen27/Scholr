@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Download, Folder, FolderOpen, FileText, ChevronDown, ArrowLeft,
+  Download, Folder, FolderOpen, FileText, ChevronDown,
   Search, BookOpen, Clock, User,
 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { NoteFolder, Note } from "@/types";
 import toast from "react-hot-toast";
+import NotebookLayout from "@/components/NotebookLayout";
 
 export default function NotesPage() {
   const router = useRouter();
@@ -71,30 +72,8 @@ export default function NotesPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
-      <div className="orb w-96 h-96 bg-rose-700 -top-20 -right-20 opacity-10" />
-
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 glass border-b px-6 py-4" style={{ borderColor: "var(--border-subtle)" }}>
-        <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <button id="notes-back-btn" onClick={() => router.back()}
-            className="p-2 rounded-xl hover:bg-white/10 transition-colors" style={{ color: "var(--text-secondary)" }}>
-            <ArrowLeft size={18} />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #ff7a6b, #e85f50)" }}>
-              <Download size={14} className="text-white" />
-            </div>
-            <span className="font-semibold" style={{ color: "var(--text-primary)" }}>Browse Notes</span>
-          </div>
-          <div className="ml-auto text-xs" style={{ color: "var(--text-secondary)" }}>
-            {folders.length} subject{folders.length !== 1 ? "s" : ""}
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-4xl mx-auto px-6 py-10 relative z-10">
+    <NotebookLayout>
+      <main className="max-w-4xl mx-auto px-6 py-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-3xl font-bold mb-1 gradient-text-cyan">Notes Library</h1>
           <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
@@ -253,6 +232,6 @@ export default function NotesPage() {
           )}
         </motion.div>
       </main>
-    </div>
+    </NotebookLayout>
   );
 }

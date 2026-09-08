@@ -4,14 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Upload, Download, Flame, Trophy, BookOpen, LogOut,
+  Upload, Download, Flame, Trophy,
   User, Building, GraduationCap, Calendar, Star, Lock, TrendingUp,
-  LayoutDashboard, Library, NotebookPen,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import api from "@/lib/api";
 import type { User as UserType, BadgeType } from "@/types";
-import toast from "react-hot-toast";
+import NotebookLayout from "@/components/NotebookLayout";
 
 const BADGE_CONFIG: Record<BadgeType, {
   label: string; icon: string; color: string; glow: string;
@@ -36,7 +35,7 @@ const BADGE_CONFIG: Record<BadgeType, {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, clearAuth, updateUser } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
 
   // Guard: redirect if not authenticated
@@ -55,12 +54,6 @@ export default function DashboardPage() {
   }, []);
 
   if (!user) return null;
-
-  function handleLogout() {
-    clearAuth();
-    toast.success("Logged out successfully");
-    router.push("/login");
-  }
 
   const earnedBadgeTypes = new Set(user.badges.map((b) => b.badge_type));
 
@@ -81,46 +74,8 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="notebook-page min-h-screen relative">
-      <div className="notebook-shell">
-        <aside className="notebook-sidebar">
-          <div className="notebook-brand">
-            <div className="notebook-brand-mark"><BookOpen size={20} /></div>
-            <span>Scholr</span>
-          </div>
-
-          <p className="notebook-sidebar-label">My workspace</p>
-          <nav className="notebook-nav" aria-label="Main navigation">
-            {[
-              { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-              { label: "Upload Notes", href: "/upload", icon: Upload },
-              { label: "Browse Notes", href: "/notes", icon: Library },
-            ].map(({ label, href, icon: Icon }) => (
-              <button
-                key={href}
-                className={`notebook-nav-item ${href === "/dashboard" ? "active" : ""}`}
-                onClick={() => router.push(href)}
-              >
-                <Icon size={18} />
-                <span>{label}</span>
-              </button>
-            ))}
-          </nav>
-
-          <div className="notebook-sidebar-footer">
-            <div className="notebook-sticker"><NotebookPen size={16} /> Keep learning</div>
-            <button id="logout-btn" onClick={handleLogout} className="notebook-logout">
-              <LogOut size={16} />
-              <span>Log out</span>
-            </button>
-          </div>
-        </aside>
-
-        <div className="notebook-binding" aria-hidden="true">
-          {Array.from({ length: 15 }, (_, index) => <span key={index} />)}
-        </div>
-
-        <main className="notebook-content max-w-6xl px-6 py-10 space-y-10">
+    <NotebookLayout>
+      <div className="max-w-6xl px-6 py-10 space-y-10">
         {/* Welcome */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-4xl font-bold">
@@ -358,8 +313,7 @@ export default function DashboardPage() {
             })}
           </div>
         </motion.div>
-        </main>
       </div>
-    </div>
+    </NotebookLayout>
   );
 }
