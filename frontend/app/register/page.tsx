@@ -113,7 +113,7 @@ export default function RegisterPage() {
                 className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all"
                 style={{
                   background: step >= s ? "linear-gradient(135deg, #f5b942, #ff7a6b)" : "rgba(255,255,255,0.08)",
-                  color: step >= s ? "white" : "var(--text-muted)",
+                  color: step >= s ? "white" : "#665b4e",
                 }}
               >
                 {step > s ? <CheckCircle size={16} /> : s}
