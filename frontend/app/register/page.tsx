@@ -110,7 +110,7 @@ export default function RegisterPage() {
           {([1, 2] as Step[]).map((s) => (
             <div key={s} className="flex items-center gap-2 flex-1">
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all"
+                className={`register-step-number w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step >= s ? "register-step-number-active" : "register-step-number-inactive"}`}
                 style={{
                   background: step >= s ? "linear-gradient(135deg, #f5b942, #ff7a6b)" : "rgba(255,255,255,0.08)",
                   color: step >= s ? "white" : "#665b4e",
@@ -118,6 +118,9 @@ export default function RegisterPage() {
               >
                 {step > s ? <CheckCircle size={16} /> : s}
               </div>
+              <span className={`register-step-label ${step >= s ? "register-step-label-active" : ""}`}>
+                {s === 1 ? "Upload ID" : "Profile details"}
+              </span>
               {s === 1 && (
                 <div
                   className="flex-1 h-0.5 rounded transition-all"

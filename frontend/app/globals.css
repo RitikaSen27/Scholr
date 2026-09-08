@@ -255,6 +255,23 @@ body {
 .auth-card input, .auth-card select { background: rgba(255, 255, 255, .62) !important; color: #302d2a !important; }
 .auth-card input::placeholder { color: #a39787; opacity: 1; }
 .auth-card option { color: #302d2a; background: #fffaf0; }
+.register-step-number-inactive {
+  color: #302d2a !important;
+  background: #fffaf0 !important;
+  border: 2px solid #a94f36;
+  opacity: 1 !important;
+}
+.register-step-number-active {
+  color: #fffaf0 !important;
+  border: 2px solid #a94f36;
+}
+.register-step-label {
+  color: #665b4e;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.register-step-label-active { color: #a94f36; }
 
 @media (max-width: 720px) {
   .landing-page::before, .auth-page::before { inset: 10px; }
