@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import {
   Upload, Download, Flame, Trophy, BookOpen, LogOut,
   User, Building, GraduationCap, Calendar, Star, Lock, TrendingUp,
+  LayoutDashboard, Library, NotebookPen,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import api from "@/lib/api";
@@ -80,43 +81,46 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen relative" style={{ background: "var(--bg-primary)" }}>
-      {/* Ambient orbs */}
-      <div className="orb w-[500px] h-[500px] bg-amber-700 -top-40 -right-40 opacity-10" />
-      <div className="orb w-72 h-72 bg-rose-700 bottom-20 left-10 opacity-10" />
-
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 glass border-b" style={{ borderColor: "var(--border-subtle)" }}>
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)" }}>
-              <BookOpen size={18} className="text-white" />
-            </div>
-            <span className="font-bold text-lg gradient-text">Scholr</span>
+    <div className="notebook-page min-h-screen relative">
+      <div className="notebook-shell">
+        <aside className="notebook-sidebar">
+          <div className="notebook-brand">
+            <div className="notebook-brand-mark"><BookOpen size={20} /></div>
+            <span>Scholr</span>
           </div>
-          <div className="flex items-center gap-3">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              onClick={() => router.push("/hub")}
-              className="px-4 py-2 rounded-xl text-sm font-medium transition-all"
-              style={{ background: "linear-gradient(135deg, #f5b942, #ff7a6b)", color: "white" }}
-            >
-              Open Hub
-            </motion.button>
-            <button
-              id="logout-btn"
-              onClick={handleLogout}
-              className="p-2 rounded-xl transition-colors hover:bg-white/10"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <LogOut size={18} />
+
+          <p className="notebook-sidebar-label">My workspace</p>
+          <nav className="notebook-nav" aria-label="Main navigation">
+            {[
+              { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+              { label: "Upload Notes", href: "/upload", icon: Upload },
+              { label: "Browse Notes", href: "/notes", icon: Library },
+            ].map(({ label, href, icon: Icon }) => (
+              <button
+                key={href}
+                className={`notebook-nav-item ${href === "/dashboard" ? "active" : ""}`}
+                onClick={() => router.push(href)}
+              >
+                <Icon size={18} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
+
+          <div className="notebook-sidebar-footer">
+            <div className="notebook-sticker"><NotebookPen size={16} /> Keep learning</div>
+            <button id="logout-btn" onClick={handleLogout} className="notebook-logout">
+              <LogOut size={16} />
+              <span>Log out</span>
             </button>
           </div>
-        </div>
-      </nav>
+        </aside>
 
-      <main className="max-w-6xl mx-auto px-6 py-10 space-y-10">
+        <div className="notebook-binding" aria-hidden="true">
+          {Array.from({ length: 15 }, (_, index) => <span key={index} />)}
+        </div>
+
+        <main className="notebook-content max-w-6xl px-6 py-10 space-y-10">
         {/* Welcome */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-4xl font-bold">
@@ -354,7 +358,8 @@ export default function DashboardPage() {
             })}
           </div>
         </motion.div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
