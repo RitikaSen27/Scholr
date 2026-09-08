@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { label: "Browse Notes", href: "/notes", icon: Library },
 ];
 
-export default function NotebookLayout({ children }: { children: React.ReactNode }) {
+export default function NotebookLayout({ children, showLogout = true }: { children: React.ReactNode; showLogout?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const { clearAuth } = useAuthStore();
@@ -69,10 +69,12 @@ export default function NotebookLayout({ children }: { children: React.ReactNode
 
           <div className="notebook-sidebar-footer">
             <div className="notebook-sticker"><NotebookPen size={16} /> Keep learning</div>
-            <button onClick={handleLogout} className="notebook-logout">
-              <LogOut size={16} />
-              <span>Log out</span>
-            </button>
+            {showLogout && (
+              <button onClick={handleLogout} className="notebook-logout">
+                <LogOut size={16} />
+                <span>Log out</span>
+              </button>
+            )}
           </div>
         </aside>
 
