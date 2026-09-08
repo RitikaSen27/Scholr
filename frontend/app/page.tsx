@@ -1,41 +1,39 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, BookOpen, LogIn, UserPlus } from "lucide-react";
+import { BookOpen } from "lucide-react";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function RootPage() {
+  const router = useRouter();
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    const destination = user ? "/dashboard" : "/login";
+    const timeout = window.setTimeout(() => router.replace(destination), 1500);
+    return () => window.clearTimeout(timeout);
+  }, [router, user]);
+
   return (
-    <main className="landing-page">
-      <div className="landing-doodle landing-doodle-one" aria-hidden="true">study & share</div>
-      <div className="landing-doodle landing-doodle-two" aria-hidden="true">notes for everyone</div>
-
+    <main className="splash-page" aria-label="Loading Scholr">
       <motion.section
-        className="landing-content"
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.65 }}
+        className="splash-content"
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        <div className="landing-logo"><BookOpen size={42} /></div>
-        <p className="landing-eyebrow">Your campus notebook</p>
+        <motion.div
+          className="splash-logo"
+          animate={{ rotate: [-4, 4, -4] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <BookOpen size={42} />
+        </motion.div>
+        <p className="splash-eyebrow">Your campus notebook</p>
         <h1>Scholr</h1>
-        <p className="landing-description">
-          A shared place for better notes, deeper learning, and helping your classmates succeed.
-        </p>
-
-        <div className="landing-actions">
-          <Link href="/login" className="landing-primary-action">
-            <LogIn size={18} />
-            Log in
-            <ArrowRight size={16} />
-          </Link>
-          <Link href="/register" className="landing-secondary-action">
-            <UserPlus size={18} />
-            Create an account
-          </Link>
-        </div>
-
-        <p className="landing-note">Upload notes. Browse freely. Grow together.</p>
+        <div className="splash-rule" />
       </motion.section>
     </main>
   );
