@@ -12,7 +12,6 @@ import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { AuthResponse } from "@/types";
 import toast from "react-hot-toast";
-import NotebookLayout from "@/components/NotebookLayout";
 
 type Step = 1 | 2;
 
@@ -90,16 +89,16 @@ export default function RegisterPage() {
   }
 
   return (
-    <NotebookLayout showLogout={false}>
+    <main className="auth-page auth-page-tall">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="auth-notebook-card max-w-lg mx-auto my-10 px-8 py-10"
+        className="auth-card max-w-lg mx-auto"
       >
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
-          <div className="auth-page-mark">S</div>
+          <div className="auth-logo"><BookOpen size={26} /></div>
           <h1 className="font-display text-3xl font-bold" style={{ color: "#a94f36" }}>Create your account</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
             Create your student account
@@ -344,7 +343,7 @@ export default function RegisterPage() {
           </Link>
         </p>
       </motion.div>
-    </NotebookLayout>
+    </main>
   );
 }
 
