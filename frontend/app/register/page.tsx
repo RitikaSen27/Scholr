@@ -12,6 +12,7 @@ import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { AuthResponse } from "@/types";
 import toast from "react-hot-toast";
+import AuthSplash from "@/components/AuthSplash";
 
 type Step = 1 | 2;
 
@@ -89,7 +90,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="auth-page auth-page-tall">
+    <AuthSplash>
+      <main className="auth-page auth-page-tall">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -346,7 +348,8 @@ export default function RegisterPage() {
           </Link>
         </p>
       </motion.div>
-    </main>
+      </main>
+    </AuthSplash>
   );
 }
 
