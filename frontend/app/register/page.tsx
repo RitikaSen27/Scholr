@@ -80,9 +80,14 @@ export default function RegisterPage() {
       toast.success("Account created! Welcome to Scholr 🎉");
       router.push("/dashboard");
     } catch (err: unknown) {
-      const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        "";
+      const responseDetail = (err as {
+        response?: { data?: { detail?: unknown } };
+      })?.response?.data?.detail;
+      const detail = typeof responseDetail === "string"
+        ? responseDetail
+        : Array.isArray(responseDetail) && typeof responseDetail[0] === "object" && responseDetail[0] !== null && "msg" in responseDetail[0]
+          ? String((responseDetail[0] as { msg: unknown }).msg)
+          : "";
       const msg = detail.toLowerCase().includes("student id") && detail.toLowerCase().includes("exist")
         ? "This Student ID already exists. Please use a different ID."
         : detail || "Registration failed. Please try again.";
@@ -244,7 +249,7 @@ export default function RegisterPage() {
                 </h2>
                 <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
                   Student ID: <span className="font-mono text-amber-400">{form.student_id || "—"}</span>{" "}
-                  (locked by OCR)
+                  (editable, 1–100)
                 </p>
               </div>
 
@@ -255,10 +260,10 @@ export default function RegisterPage() {
                 icon={<IdCard size={15} />}
                 value={form.student_id}
                 onChange={set("student_id")}
-                placeholder="Auto-detected"
-                disabled={!!form.student_id}
-                minLength={2}
-                maxLength={15}
+                placeholder="Enter 1–100"
+                type="number"
+                min={1}
+                max={100}
                 required
               />
 
@@ -359,7 +364,7 @@ export default function RegisterPage() {
 }
 
 function InputField({
-  id, label, icon, value, onChange, placeholder, type = "text", required, disabled, minLength, maxLength,
+  id, label, icon, value, onChange, placeholder, type = "text", required, disabled, min, max,
 }: {
   id: string;
   label: string;
@@ -370,8 +375,8 @@ function InputField({
   type?: string;
   required?: boolean;
   disabled?: boolean;
-  minLength?: number;
-  maxLength?: number;
+  min?: number;
+  max?: number;
 }) {
   return (
     <div>
@@ -389,8 +394,8 @@ function InputField({
           onChange={onChange}
           required={required}
           disabled={disabled}
-          minLength={minLength}
-          maxLength={maxLength}
+          min={min}
+          max={max}
           placeholder={placeholder}
           className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm focus-ring transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           style={{

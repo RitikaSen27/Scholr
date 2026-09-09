@@ -58,8 +58,8 @@ def extract_student_id(image_bytes: bytes) -> Optional[str]:
 
     logger.debug("Raw OCR text: %s", combined_text)
 
-    # Extract alphanumeric IDs: 2–15 chars, mix of digits and uppercase letters
-    candidates = re.findall(r"\b[A-Z0-9]{2,15}\b", combined_text.upper())
+    # Extract alphanumeric IDs: 1–15 chars, mix of digits and uppercase letters
+    candidates = re.findall(r"\b[A-Z0-9]{1,15}\b", combined_text.upper())
 
     # Prefer candidates that contain both letters and digits (typical student IDs)
     mixed = [c for c in candidates if re.search(r"[A-Z]", c) and re.search(r"[0-9]", c)]

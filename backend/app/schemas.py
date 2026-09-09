@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.models import BadgeType
 
@@ -12,13 +12,20 @@ class OCRResponse(BaseModel):
 
 # ──── Auth ────────────────────────────────────────────────────────────────────
 class RegisterRequest(BaseModel):
-    student_id: str = Field(min_length=2, max_length=15)
+    student_id: str = Field(min_length=1, max_length=3)
     email: EmailStr
     password: str
     name: str
     college: str
     stream: str
     year: str
+
+    @field_validator("student_id")
+    @classmethod
+    def validate_student_id(cls, value: str) -> str:
+        if not value.isdigit() or not 1 <= int(value) <= 100:
+            raise ValueError("Student ID must be a number from 1 to 100")
+        return value
 
 
 class LoginRequest(BaseModel):
