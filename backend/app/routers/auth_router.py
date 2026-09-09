@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -33,7 +34,14 @@ def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
         year=payload.year,
     )
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="This Student ID already exists. Please use a different ID.",
+        )
     db.refresh(user)
 
     return schemas.AuthResponse(

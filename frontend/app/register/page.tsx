@@ -80,9 +80,12 @@ export default function RegisterPage() {
       toast.success("Account created! Welcome to Scholr 🎉");
       router.push("/dashboard");
     } catch (err: unknown) {
-      const msg =
+      const detail =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        "Registration failed. Please try again.";
+        "";
+      const msg = detail.toLowerCase().includes("student id") && detail.toLowerCase().includes("exist")
+        ? "This Student ID already exists. Please use a different ID."
+        : detail || "Registration failed. Please try again.";
       toast.error(msg);
     } finally {
       setRegistering(false);
@@ -254,6 +257,8 @@ export default function RegisterPage() {
                 onChange={set("student_id")}
                 placeholder="Auto-detected"
                 disabled={!!form.student_id}
+                minLength={2}
+                maxLength={15}
                 required
               />
 
@@ -354,7 +359,7 @@ export default function RegisterPage() {
 }
 
 function InputField({
-  id, label, icon, value, onChange, placeholder, type = "text", required, disabled,
+  id, label, icon, value, onChange, placeholder, type = "text", required, disabled, minLength, maxLength,
 }: {
   id: string;
   label: string;
@@ -365,6 +370,8 @@ function InputField({
   type?: string;
   required?: boolean;
   disabled?: boolean;
+  minLength?: number;
+  maxLength?: number;
 }) {
   return (
     <div>
@@ -382,6 +389,8 @@ function InputField({
           onChange={onChange}
           required={required}
           disabled={disabled}
+          minLength={minLength}
+          maxLength={maxLength}
           placeholder={placeholder}
           className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm focus-ring transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           style={{

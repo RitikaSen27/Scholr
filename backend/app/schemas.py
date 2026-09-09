@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from app.models import BadgeType
 
@@ -12,7 +12,7 @@ class OCRResponse(BaseModel):
 
 # ──── Auth ────────────────────────────────────────────────────────────────────
 class RegisterRequest(BaseModel):
-    student_id: str
+    student_id: str = Field(min_length=2, max_length=15)
     email: EmailStr
     password: str
     name: str
