@@ -26,7 +26,7 @@ export default function LoginPage() {
         email,
         password,
       });
-      setAuth(data.user, data.access_token, data.refresh_token);
+      setAuth(data.user, data.access_token, data.refresh_token, false);
       toast.success(`Welcome back, ${data.user.name}!`);
       router.push("/dashboard");
     } catch (err: unknown) {

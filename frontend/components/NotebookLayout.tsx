@@ -28,7 +28,7 @@ export default function NotebookLayout({ children, showLogout = true }: { childr
   function handleLogout() {
     clearAuth();
     toast.success("Logged out successfully");
-    router.replace("/register");
+    router.replace("/login");
   }
 
   return (

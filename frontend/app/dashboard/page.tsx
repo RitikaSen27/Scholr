@@ -35,7 +35,7 @@ const BADGE_CONFIG: Record<BadgeType, {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, updateUser } = useAuthStore();
+  const { user, isNewUser, updateUser } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
 
   // Guard: redirect if not authenticated
@@ -79,7 +79,7 @@ export default function DashboardPage() {
         {/* Welcome */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-4xl font-bold">
-            Welcome back, <span className="gradient-text">{user.name.split(" ")[0]}</span> 👋
+            {isNewUser ? "Welcome, " : "Welcome back, "}<span className="gradient-text">{user.name.split(" ")[0]}</span> 👋
           </h1>
           <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
             {user.college} · {user.stream} · {user.year} Year

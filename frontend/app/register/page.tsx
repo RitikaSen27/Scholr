@@ -75,7 +75,7 @@ export default function RegisterPage() {
     setRegistering(true);
     try {
       const { data } = await api.post<AuthResponse>("/api/auth/register", form);
-      setAuth(data.user, data.access_token, data.refresh_token);
+      setAuth(data.user, data.access_token, data.refresh_token, true);
       toast.success("Account created! Welcome to Scholr 🎉");
       router.push("/dashboard");
     } catch (err: unknown) {
