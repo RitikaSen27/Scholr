@@ -29,6 +29,9 @@ def _normalize_to_png(image_bytes: bytes) -> Optional[bytes]:
     """
     try:
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        # Small ID cards often contain text that is too fine for OCR at its
+        # original resolution. Upscaling gives Textract more character detail.
+        img = img.resize((img.width * 2, img.height * 2), Image.Resampling.LANCZOS)
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         return buf.getvalue()
@@ -65,7 +68,7 @@ def extract_student_id(image_bytes: bytes) -> Optional[str]:
 
     # Prefer the value immediately following an ID-like label, including short IDs.
     labeled_values = re.findall(
-        r"(?:STUDENT\s*ID|ID\s*(?:NO|NUMBER)?|ROLL\s*(?:NO|NUMBER)?|REG(?:ISTRATION)?\s*NO)\s*[:#-]?\s*([A-Z0-9]{1,15})",
+        r"(?:STUDENT\s*ID|ID\s*(?:NO|NUMBER)?|ROLL\s*(?:NO|NUMBER)?|REG(?:ISTRATION)?\s*NO|ADMISSION\s*(?:NO|NUMBER)?)\s*[:#-]?\s*([A-Z0-9]{1,15})",
         normalized_text,
     )
     numeric_labeled = [value for value in labeled_values if value.isdigit() and 1 <= int(value) <= 100]
