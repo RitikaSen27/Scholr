@@ -9,7 +9,6 @@ import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { AuthResponse } from "@/types";
 import toast from "react-hot-toast";
-import AuthSplash from "@/components/AuthSplash";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,8 +40,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthSplash>
-      <main className="auth-page">
+    <main className="auth-page">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -135,7 +133,6 @@ export default function LoginPage() {
           </Link>
         </p>
       </motion.div>
-      </main>
-    </AuthSplash>
+    </main>
   );
 }
