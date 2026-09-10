@@ -70,6 +70,16 @@ export default function RegisterPage() {
     }
   }
 
+  function continueWithManualId() {
+    const studentId = Number(form.student_id);
+    if (!Number.isInteger(studentId) || studentId < 1 || studentId > 100) {
+      toast.error("Enter a Student ID from 1 to 100.");
+      return;
+    }
+    setOcrError(null);
+    setStep(2);
+  }
+
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setRegistering(true);
@@ -211,6 +221,42 @@ export default function RegisterPage() {
                 className="hidden"
               />
 
+              <div className="register-or-divider" aria-label="Or enter your ID manually">
+                <span>OR</span>
+              </div>
+
+              <div className="register-manual-id">
+                <div>
+                  <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                    Enter your Student ID manually
+                  </h3>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                    Use this option if you do not want to upload an ID card.
+                  </p>
+                </div>
+                <InputField
+                  id="manual-student-id"
+                  label="Student ID (1–100)"
+                  icon={<IdCard size={15} />}
+                  value={form.student_id}
+                  onChange={set("student_id")}
+                  placeholder="e.g. 9 or 100"
+                  type="number"
+                  min={1}
+                  max={100}
+                  required
+                />
+                <button
+                  id="continue-manual-id-btn"
+                  type="button"
+                  onClick={continueWithManualId}
+                  className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all hover:-translate-y-0.5"
+                  style={{ color: "#fffaf0", background: "#a94f36", boxShadow: "2px 3px 0 #7f3e2c" }}
+                >
+                  Continue with this ID
+                </button>
+              </div>
+
               {ocrError && (
                 <div className="flex items-start gap-2 p-3 rounded-xl"
                   style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}>
@@ -226,7 +272,7 @@ export default function RegisterPage() {
                   className="w-full py-2 rounded-xl text-sm font-medium transition-colors hover:bg-white/10"
                   style={{ color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
                 >
-                  Enter ID manually instead →
+                  Continue with the entered ID →
                 </button>
               )}
             </motion.div>
@@ -251,7 +297,7 @@ export default function RegisterPage() {
                 </p>
               </div>
 
-              {/* Student ID (locked) */}
+              {/* Student ID can be corrected after OCR or entered manually. */}
               <InputField
                 id="reg-student-id"
                 label="Student ID"
