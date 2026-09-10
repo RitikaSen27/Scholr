@@ -100,7 +100,7 @@ npm run dev
 
 Or just run: `./start-frontend.sh`
 
-The app will be available at **http://localhost:3000**.
+The app will be available at "https://scholr-qkz4.vercel.app".
 
 ---
 
