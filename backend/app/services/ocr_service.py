@@ -1,64 +1,67 @@
+import io
 import logging
 import re
 from typing import Optional
 
-import cv2
-import numpy as np
-import pytesseract
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 from PIL import Image
+
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
 
-def preprocess_image(img_array: np.ndarray) -> np.ndarray:
-    """
-    Apply OpenCV preprocessing pipeline:
-    1. Convert to grayscale
-    2. Denoise
-    3. Increase contrast via CLAHE
-    4. Adaptive threshold (binarization)
-    """
-    gray = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
-    denoised = cv2.fastNlMeansDenoising(gray, h=10)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    enhanced = clahe.apply(denoised)
-    thresh = cv2.adaptiveThreshold(
-        enhanced, 255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY, 11, 2
+def _get_textract_client():
+    return boto3.client(
+        "textract",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION,
     )
-    return thresh
+
+
+def _normalize_to_png(image_bytes: bytes) -> Optional[bytes]:
+    """
+    Textract's synchronous DetectDocumentText only accepts JPEG or PNG.
+    Re-encode whatever format we received (webp, bmp, etc.) into PNG so
+    the upload restrictions in ocr_router.py can stay as they are.
+    """
+    try:
+        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
+    except Exception as exc:
+        logger.error("Could not process image before OCR: %s", exc)
+        return None
 
 
 def extract_student_id(image_bytes: bytes) -> Optional[str]:
     """
-    Run the full OCR pipeline on raw image bytes.
-    Returns the best candidate alphanumeric student ID, or None.
+    Run the image through AWS Textract and return the best candidate
+    alphanumeric student ID, or None if nothing usable was found.
     """
-    nparr = np.frombuffer(image_bytes, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    if img is None:
-        logger.error("Could not decode image bytes")
+    normalized = _normalize_to_png(image_bytes)
+    if normalized is None:
         return None
 
-    processed = preprocess_image(img)
+    client = _get_textract_client()
+    try:
+        response = client.detect_document_text(Document={"Bytes": normalized})
+    except (BotoCoreError, ClientError) as exc:
+        logger.error("Textract call failed: %s", exc)
+        return None
 
-    # Run Tesseract with two PSM modes and combine results
-    config_options = [
-        r"--oem 3 --psm 6",   # uniform block of text
-        r"--oem 3 --psm 11",  # sparse text
+    lines = [
+        block["Text"]
+        for block in response.get("Blocks", [])
+        if block.get("BlockType") == "LINE"
     ]
-    combined_text = ""
-    for cfg in config_options:
-        try:
-            text = pytesseract.image_to_string(processed, config=cfg)
-            combined_text += " " + text
-        except Exception as exc:
-            logger.warning("Tesseract error with config %s: %s", cfg, exc)
+    combined_text = " ".join(lines)
+    logger.debug("Raw Textract text: %s", combined_text)
 
-    logger.debug("Raw OCR text: %s", combined_text)
-
-    # Extract alphanumeric IDs: 1–15 chars, mix of digits and uppercase letters
+    # Extract alphanumeric IDs: 1-15 chars, mix of digits and uppercase letters
     candidates = re.findall(r"\b[A-Z0-9]{1,15}\b", combined_text.upper())
 
     # Prefer candidates that contain both letters and digits (typical student IDs)
