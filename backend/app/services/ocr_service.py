@@ -64,23 +64,28 @@ def _to_png(image: Image.Image) -> bytes:
 def _pick_student_id(text: str) -> Optional[str]:
     normalized_text = re.sub(r"\s+", " ", text.upper())
     label_pattern = (
-        r"(?:STUDENT\s*ID|STUDENT\s*NO|ID\s*(?:NO|NUMBER)?|"
-        r"ROLL\s*(?:NO|NUMBER)?|REG(?:ISTRATION)?\s*(?:NO|NUMBER)?|"
-        r"ADMISSION\s*(?:NO|NUMBER)?)\s*[:#=-]?\s*([A-Z0-9]{1,15})"
+        r"(?:STUDENT\s*[.:-]?\s*(?:ID|NO|NUMBER)|"
+        r"(?:ID|IDENTIFICATION)\s*[.:-]?\s*(?:NO|NUMBER|CODE)?|"
+        r"ROLL\s*[.:-]?\s*(?:NO|NUMBER)?|"
+        r"(?:REG|REGD|REGISTRATION|ENROL(?:L)?MENT|ADMISSION|ADMN)\s*"
+        r"[.:-]?\s*(?:ID|NO|NUMBER|CODE)?)\s*[:#=-]?\s*([A-Z0-9]{1,15})"
     )
 
     labeled_values = re.findall(label_pattern, normalized_text)
-    numeric_labeled = [
-        value for value in labeled_values
-        if value.isdigit() and 1 <= int(value) <= 100
-    ]
+    numeric_labeled = []
+    for value in labeled_values:
+        cleaned_value = value.replace("O", "0").replace("I", "1")
+        if cleaned_value.isdigit() and 1 <= int(cleaned_value) <= 100:
+            numeric_labeled.append(str(int(cleaned_value)))
     if numeric_labeled:
         return numeric_labeled[0]
 
-    numeric_candidates = [
-        value for value in re.findall(r"\b\d{1,3}\b", normalized_text)
-        if 1 <= int(value) <= 100
-    ]
+    # Some cards print only the ID value without a label. Ignore likely years,
+    # dates, and long phone numbers before accepting a standalone number.
+    numeric_candidates = []
+    for value in re.findall(r"\b\d{1,15}\b", normalized_text):
+        if 1 <= int(value) <= 100 and not re.search(r"(?:19|20)\d{2}", value):
+            numeric_candidates.append(str(int(value)))
     if numeric_candidates:
         return numeric_candidates[0]
 
@@ -89,7 +94,7 @@ def _pick_student_id(text: str) -> Optional[str]:
     return mixed[0] if mixed else (candidates[0] if candidates else None)
 
 
-def extract_student_id(image_bytes: bytes) -> Optional[str]:
+def _extract_text(image_bytes: bytes) -> Optional[str]:
     """
     Run the image through AWS Textract and return the best candidate
     alphanumeric student ID, or None if nothing usable was found.
@@ -113,4 +118,31 @@ def extract_student_id(image_bytes: bytes) -> Optional[str]:
 
     combined_text = " ".join(all_text)
     logger.debug("Raw Textract text from %d variants: %s", len(variants), combined_text)
-    return _pick_student_id(combined_text)
+    return combined_text or None
+
+
+def extract_student_id(image_bytes: bytes) -> Optional[str]:
+    text = _extract_text(image_bytes)
+    return _pick_student_id(text) if text else None
+
+
+def extract_student_details(image_bytes: bytes) -> dict[str, Optional[str]]:
+    """Extract the ID and common profile fields when cards include those labels."""
+    text = _extract_text(image_bytes)
+    if not text:
+        return {"student_id": None, "name": None, "college": None, "stream": None, "year": None}
+
+    normalized = re.sub(r"\s+", " ", text.upper())
+
+    def labeled_value(labels: str) -> Optional[str]:
+        match = re.search(rf"(?:{labels})\s*[.:-]?\s*([A-Z][A-Z .'-]{{1,50}})", normalized)
+        return match.group(1).strip(" .:-") if match else None
+
+    year_match = re.search(r"\b(1ST|2ND|3RD|4TH|5TH|19\d{2}|20\d{2})\s*(?:YEAR|YR)?\b", normalized)
+    return {
+        "student_id": _pick_student_id(text),
+        "name": labeled_value(r"NAME|STUDENT\s*NAME"),
+        "college": labeled_value(r"COLLEGE|INSTITUTE|SCHOOL|UNIVERSITY"),
+        "stream": labeled_value(r"COURSE|BRANCH|STREAM|CLASS"),
+        "year": year_match.group(1) if year_match else None,
+    }

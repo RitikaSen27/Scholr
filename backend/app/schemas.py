@@ -8,6 +8,10 @@ from app.models import BadgeType
 # ──── OCR ─────────────────────────────────────────────────────────────────────
 class OCRResponse(BaseModel):
     student_id: str
+    name: str | None = None
+    college: str | None = None
+    stream: str | None = None
+    year: str | None = None
 
 
 # ──── Auth ────────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException
 
 from app.schemas import OCRResponse
-from app.services.ocr_service import extract_student_id
+from app.services.ocr_service import extract_student_details
 
 router = APIRouter(prefix="/api/backend/api/ocr", tags=["ocr"])
 
@@ -23,11 +23,11 @@ async def extract_id(file: UploadFile = File(...)):
     if len(image_bytes) > 10 * 1024 * 1024:  # 10 MB limit
         raise HTTPException(status_code=413, detail="Image too large (max 10 MB)")
 
-    student_id = extract_student_id(image_bytes)
-    if not student_id:
+    details = extract_student_details(image_bytes)
+    if not details["student_id"]:
         raise HTTPException(
             status_code=422,
             detail="Could not extract a student ID from the image. Please ensure the card is clearly visible.",
         )
 
-    return OCRResponse(student_id=student_id)
+    return OCRResponse(**details)

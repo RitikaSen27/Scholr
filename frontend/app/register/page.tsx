@@ -53,10 +53,23 @@ export default function RegisterPage() {
     fd.append("file", file);
 
     try {
-      const { data } = await api.post<{ student_id: string }>("/api/ocr/extract-id", fd, {
+      const { data } = await api.post<{
+        student_id: string;
+        name?: string | null;
+        college?: string | null;
+        stream?: string | null;
+        year?: string | null;
+      }>("/api/ocr/extract-id", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setForm((prev) => ({ ...prev, student_id: data.student_id }));
+      setForm((prev) => ({
+        ...prev,
+        student_id: data.student_id,
+        name: data.name || prev.name,
+        college: data.college || prev.college,
+        stream: data.stream || prev.stream,
+        year: data.year || prev.year,
+      }));
       toast.success(`Student ID detected: ${data.student_id}`);
       setStep(2);
     } catch (err: unknown) {
