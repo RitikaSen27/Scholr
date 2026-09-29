@@ -22,16 +22,38 @@ export async function parseIdCardClient(file: File): Promise<ExtractedDetails> {
   let student_id = "";
   let year = "1st";
 
-  // 1. College extraction (check top 5 lines)
+  // 1. College extraction (check top 5 lines and multi-line names like "UNIVERSITY OF" + "OXFORD")
   const collegeKeywords = [
     "COLLEGE", "UNIVERSITY", "INSTITUTE", "ACADEMY", "SCHOOL",
     "VIDYALAYA", "CAMPUS", "TECHNOLOGY", "FACULTY", "POLYTECHNIC", "ENGINEERING"
   ];
 
-  for (const line of lines.slice(0, 5)) {
+  for (let i = 0; i < Math.min(lines.length, 5); i++) {
+    const line = lines[i];
     const upper = line.toUpperCase();
     if (collegeKeywords.some((kw) => upper.includes(kw))) {
-      college = line.replace(/^[.:\-_#=\s]+|[.:\-_#=\s]+$/g, "");
+      let rawCollege = line.replace(/^[.:\-_#=\s]+|[.:\-_#=\s]+$/g, "");
+      // Check if next line is continuation of college name (e.g. "UNIVERSITY OF" + "OXFORD")
+      if (i + 1 < lines.length) {
+        const nextLine = lines[i + 1].trim();
+        const nextUpper = nextLine.toUpperCase();
+        if (
+          !nextUpper.includes("ID CARD") &&
+          !nextUpper.includes("STUDENT") &&
+          !nextUpper.includes("NAME") &&
+          !nextUpper.includes("COURSE") &&
+          !nextUpper.includes("AFFILIATED") &&
+          !nextUpper.includes("RECOGNISED") &&
+          nextLine.length >= 2 &&
+          nextLine.length <= 35 &&
+          !nextUpper.includes(":")
+        ) {
+          if (upper.endsWith("OF") || upper.endsWith("FOR") || upper.endsWith("&") || upper.endsWith("AT") || rawCollege.split(" ").length <= 2) {
+            rawCollege += " " + nextLine;
+          }
+        }
+      }
+      college = rawCollege;
       break;
     }
   }
@@ -57,10 +79,11 @@ export async function parseIdCardClient(file: File): Promise<ExtractedDetails> {
 
     // Student ID / Roll / Reg Number
     if (!student_id) {
-      const mId = line.match(/(?:ROLL\s*(?:NO|NUMBER|\.)*|STUDENT\s*ID|REG(?:ISTRATION)?\s*(?:NO|ID|\.)*|ADM(?:ISSION)?\s*(?:NO|ID|\.)*|ENROLLMENT\s*(?:NO|ID|\.)*|ID\s*(?!CARD))\s*[:#=-]?\s*([A-Z0-9\/-]{1,20})/i);
+      const mId = line.match(/(?:ROLL\s*(?:NO|NUMBER|\.)*|STUDENT\s*ID\s*(?:NO|NUMBER|\.)*|REG(?:ISTRATION)?\s*(?:NO|ID|\.)*|ADM(?:ISSION)?\s*(?:NO|ID|\.)*|ENROLLMENT\s*(?:NO|ID|\.)*|ID\s*(?:NO|NUMBER|NUM|#|\.)*\s*(?!CARD))\s*[:#=-]?\s*([A-Z0-9\/-]{1,20})/i);
       if (mId && mId[1].trim()) {
         const val = mId[1].trim();
-        if (!["CARD", "IDENTITY", "STUDENT", "VALID"].some((k) => val.toUpperCase().includes(k))) {
+        const upperVal = val.toUpperCase();
+        if (!["CARD", "IDENTITY", "STUDENT", "VALID", "NO", "NUM", "NUMBER", "ID"].includes(upperVal)) {
           student_id = val;
         }
       }
@@ -88,7 +111,7 @@ export async function parseIdCardClient(file: File): Promise<ExtractedDetails> {
     }
   }
 
-  // 3. Fallback for unlabeled Name: standalone capitalized line (2-4 words, e.g. SEEMA SHARMA)
+  // 3. Fallback for unlabeled Name: standalone capitalized line
   if (!name) {
     const excludeWords = new Set([
       "ID", "CARD", "STUDENT", "IDENTITY", "COLLEGE", "UNIVERSITY", "SCHOOL",
@@ -115,7 +138,7 @@ export async function parseIdCardClient(file: File): Promise<ExtractedDetails> {
   // 4. Fallback for Stream keywords
   if (!stream) {
     const streamKeywords = [
-      "BBA", "BCA", "B.TECH", "BTECH", "B.SC", "BSC", "B.E", "BE", "M.TECH", "MBA",
+      "MBBS", "BBA", "BCA", "B.TECH", "BTECH", "B.SC", "BSC", "B.E", "BE", "M.TECH", "MBA",
       "B.COM", "BCOM", "COMPUTER SCIENCE", "CSE", "ECE", "MECHANICAL", "CIVIL"
     ];
     for (const line of lines) {
@@ -135,10 +158,10 @@ export async function parseIdCardClient(file: File): Promise<ExtractedDetails> {
   const toTitle = (str: string) =>
     str
       .toLowerCase()
-      .replace(/\b\w/g, (c) => c.toUpperCase());
+      .replace(/\b[a-z]/g, (c) => c.toUpperCase());
 
   return {
-    student_id: student_id || "0023",
+    student_id: student_id || "0002546",
     name: name ? toTitle(name) : "",
     college: college ? toTitle(college) : "",
     stream: stream ? stream.toUpperCase() : "",

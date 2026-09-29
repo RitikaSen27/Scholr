@@ -147,15 +147,32 @@ def extract_student_details(image_bytes: bytes) -> dict[str, Optional[str]]:
     if not lines:
         return details
 
-    # 1. College / Institution Name: Check top lines first
+    # 1. College / Institution Name: Check top lines first (and join multi-line names like UNIVERSITY OF + OXFORD)
     header_keywords = [
         "COLLEGE", "UNIVERSITY", "INSTITUTE", "ACADEMY", "SCHOOL",
         "VIDYALAYA", "CAMPUS", "TECHNOLOGY", "FACULTY", "POLYTECHNIC", "ENGINEERING"
     ]
-    for line in lines[:5]:
+    for i in range(min(len(lines), 5)):
+        line = lines[i]
         upper = line.upper()
         if any(kw in upper for kw in header_keywords):
-            details["college"] = line.strip(" .:-_").title()
+            raw_college = line.strip(" .:-_").title()
+            if i + 1 < len(lines):
+                next_line = lines[i + 1].strip()
+                next_upper = next_line.upper()
+                if (
+                    "ID CARD" not in next_upper
+                    and "STUDENT" not in next_upper
+                    and "NAME" not in next_upper
+                    and "COURSE" not in next_upper
+                    and "AFFILIATED" not in next_upper
+                    and "RECOGNISED" not in next_upper
+                    and 2 <= len(next_line) <= 35
+                    and ":" not in next_line
+                ):
+                    if upper.endswith("OF") or upper.endswith("FOR") or upper.endswith("&") or upper.endswith("AT") or len(raw_college.split()) <= 2:
+                        raw_college += " " + next_line.title()
+            details["college"] = raw_college
             break
     
     if not details["college"]:
@@ -181,20 +198,21 @@ def extract_student_details(image_bytes: bytes) -> dict[str, Optional[str]]:
         if not details["name"]:
             m_name = re.search(r"^(?:NAME|STUDENT\s*NAME|FULL\s*NAME|STUDENT['’]?S\s*NAME)\s*[:#=-]?\s*(.+)$", line, re.I)
             if m_name:
-                name_val = _clean_name(m_name.group(1))
-                if len(name_val) >= 2:
-                    details["name"] = name_val
+                if "FATHER" not in upper and "MOTHER" not in upper:
+                    name_val = _clean_name(m_name.group(1))
+                    if len(name_val) >= 2:
+                        details["name"] = name_val
 
         # Student ID / Roll / Reg Number
         if not details["student_id"]:
             m_id = re.search(
-                r"(?:ROLL\s*(?:NO|NUMBER)?|STUDENT\s*ID|REG(?:ISTRATION)?\s*(?:NO|ID)?|ADM(?:ISSION)?\s*(?:NO|ID)?|ENROLLMENT\s*(?:NO|ID)?|ID\s*(?!CARD))\s*[:#=-]?\s*([A-Za-z0-9\/-]{1,20})",
+                r"(?:ROLL\s*(?:NO|NUMBER|\.)*|STUDENT\s*ID\s*(?:NO|NUMBER|\.)*|REG(?:ISTRATION)?\s*(?:NO|ID|\.)*|ADM(?:ISSION)?\s*(?:NO|ID|\.)*|ENROLLMENT\s*(?:NO|ID|\.)*|ID\s*(?:NO|NUMBER|NUM|#|\.)*\s*(?!CARD))\s*[:#=-]?\s*([A-Za-z0-9\/-]{1,20})",
                 line,
                 re.I,
             )
             if m_id:
                 val = m_id.group(1).strip()
-                if len(val) >= 1 and not any(k in val.upper() for k in ["CARD", "IDENTITY", "STUDENT", "VALID"]):
+                if len(val) >= 1 and val.upper() not in ["CARD", "IDENTITY", "STUDENT", "VALID", "NO", "NUM", "NUMBER", "ID"]:
                     details["student_id"] = val
 
         # Stream / Course / Class / Branch / Department
