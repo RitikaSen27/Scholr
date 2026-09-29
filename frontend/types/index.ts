@@ -37,6 +37,19 @@ export interface Note {
   tag: string;
   upload_date: string;
   uploader_name: string;
+  report_count: number;
+  reported_by_me: boolean;
+}
+
+export interface SubjectSearchResult {
+  subject_code: string;
+  subject_name: string;
+  note_count: number;
+}
+
+export interface ReportResponse {
+  message: string;
+  report_count: number;
 }
 
 export interface NoteFolder {
@@ -56,42 +69,3 @@ export interface UploadResponse {
   streak: number;
   message: string;
 }
-
-export interface Review {
-  id: number;
-  user_id: number;
-  note_id: number;
-  rating: number;
-  comment: string | null;
-  reviewer_name: string;
-  created_at: string;
-}
-
-export interface NoteDetail {
-  id: number;
-  subject_code: string;
-  subject_name: string;
-  professor: string;
-  tag: string;
-  upload_date: string;
-  uploader_name: string;
-  preview_url: string | null;
-  avg_rating: number;
-  review_count: number;
-  reviews: Review[];
-}
-
-export type ReportReason =
-  | "inappropriate"
-  | "spam"
-  | "wrong_subject"
-  | "plagiarism"
-  | "other";
-
-export interface ReportResponse {
-  id: number;
-  note_id: number;
-  reason: string;
-  message: string;
-}
-
