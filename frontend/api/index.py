@@ -1,9 +1,7 @@
 import os
 import sys
 
-# Ensure backend directory is in sys.path
-backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend"))
-if backend_path not in sys.path:
-    sys.path.insert(0, backend_path)
+# Add the backend directory to path so `app.*` imports resolve correctly
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
-from app.main import app  # noqa: F401
+from app.main import app  # noqa: F401 - Vercel needs a symbol named `app`

@@ -1,3 +1,4 @@
+import logging
 import uuid
 from collections import defaultdict
 from datetime import date
@@ -10,8 +11,10 @@ from app import models, schemas
 from app.auth import get_current_user
 from app.database import get_db
 from app.services import badge_service, streak_service
-from app.services.s3_service import generate_presigned_url, upload_file
+from app.services.s3_service import delete_file, generate_presigned_url, upload_file
 from app.websocket_manager import manager
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/notes", tags=["notes"])
 
@@ -330,4 +333,88 @@ def create_review(
         comment=review.comment,
         reviewer_name=current_user.name,
         created_at=review.created_at,
+    )
+
+
+REPORT_THRESHOLD = 3  # auto-delete after this many unique reports
+
+
+@router.post("/report/{note_id}", response_model=schemas.ReportOut, status_code=201)
+def report_note(
+    note_id: int,
+    payload: schemas.ReportCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Report a note as inappropriate, spam, wrong subject, plagiarism, or other.
+    Each user can only report a note once.
+    If a note accumulates >= 3 reports, it is automatically deleted from DB and S3.
+    """
+    note = db.query(models.Note).filter(models.Note.id == note_id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    # Can't report your own note
+    if note.user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot report your own note")
+
+    # Check for duplicate report
+    existing = (
+        db.query(models.Report)
+        .filter(models.Report.user_id == current_user.id, models.Report.note_id == note_id)
+        .first()
+    )
+    if existing:
+        raise HTTPException(status_code=409, detail="You have already reported this note")
+
+    # Create report
+    report = models.Report(
+        user_id=current_user.id,
+        note_id=note_id,
+        reason=payload.reason,
+    )
+    db.add(report)
+    db.flush()  # get ID before possible deletion
+
+    # Count total reports for this note
+    report_count = (
+        db.query(models.Report)
+        .filter(models.Report.note_id == note_id)
+        .count()
+    )
+
+    if report_count >= REPORT_THRESHOLD:
+        # Auto-delete: remove from S3 and DB
+        s3_key = note.file_path
+        uploader = db.query(models.User).filter(models.User.id == note.user_id).first()
+
+        # Decrement uploader's upload count
+        if uploader and uploader.total_uploads > 0:
+            uploader.total_uploads -= 1
+
+        # Delete the note (cascades to reviews and reports)
+        db.delete(note)
+        db.commit()
+
+        # Delete from S3 (after commit so DB is clean even if S3 fails)
+        try:
+            delete_file(s3_key)
+        except Exception as e:
+            logger.warning("S3 delete failed for reported note %s: %s", s3_key, e)
+
+        return schemas.ReportOut(
+            id=report.id,
+            note_id=note_id,
+            reason=payload.reason,
+            message=f"Note has been automatically removed after {REPORT_THRESHOLD} reports.",
+        )
+
+    db.commit()
+
+    return schemas.ReportOut(
+        id=report.id,
+        note_id=note_id,
+        reason=payload.reason,
+        message=f"Report submitted. ({report_count}/{REPORT_THRESHOLD} reports)",
     )

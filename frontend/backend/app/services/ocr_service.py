@@ -1,10 +1,10 @@
 import io
 import logging
+import os
 import re
 from typing import Optional
 
 import boto3
-from botocore.exceptions import BotoCoreError, ClientError
 from PIL import Image, ImageEnhance, ImageOps
 
 from app.config import settings
@@ -40,52 +40,80 @@ def _image_variants(image_bytes: bytes) -> list[bytes]:
         return [image_bytes]
 
 
+def _run_gemini_ocr(image_bytes: bytes) -> str:
+    """Use Gemini Vision API if GEMINI_API_KEY is configured."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return ""
+    try:
+        from google import genai
+        from google.genai import types
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[
+                types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
+                "Extract all text lines visible on this student ID card image. Return ONLY line-by-line text."
+            ]
+        )
+        return response.text or ""
+    except Exception as exc:
+        logger.warning("Gemini OCR failed: %s", exc)
+    return ""
+
+
+def _run_local_rapidocr(image_bytes: bytes) -> str:
+    """Run local RapidOCR engine directly on image bytes."""
+    try:
+        from rapidocr_onnxruntime import RapidOCR
+        engine = RapidOCR()
+        result, _ = engine(image_bytes)
+        if result:
+            lines = [item[1].strip() for item in result if item and len(item) > 1 and item[1].strip()]
+            return "\n".join(lines)
+    except Exception as exc:
+        logger.warning("Local RapidOCR failed or not installed: %s", exc)
+    return ""
+
+
 def _extract_text(image_bytes: bytes) -> str:
     """
-    Run the image through AWS Textract lines and return extracted text with line breaks.
+    Extract text using Gemini, AWS Textract, or local RapidOCR.
     """
-    if not settings.AWS_ACCESS_KEY_ID or "paste" in settings.AWS_ACCESS_KEY_ID.lower():
-        logger.warning("AWS credentials not configured. Using standard card extraction fallback.")
-        return """PRATIBHA LITTLE FLOWER ACADEMY
-ID CARD
-Name : Ramiz Ahmed Sakil
-Class : Six
-Roll : 01
-Section : 2009"""
+    # 1. Try Gemini Vision if API key is provided
+    gemini_text = _run_gemini_ocr(image_bytes)
+    if gemini_text:
+        return gemini_text
 
-    variants = _image_variants(image_bytes)
-    client = _get_textract_client()
-    lines: list[str] = []
+    # 2. Try AWS Textract if credentials are provided
+    if settings.AWS_ACCESS_KEY_ID and "paste" not in settings.AWS_ACCESS_KEY_ID.lower() and len(settings.AWS_ACCESS_KEY_ID) > 5:
+        variants = _image_variants(image_bytes)
+        client = _get_textract_client()
 
-    for variant in variants:
-        try:
-            response = client.detect_document_text(Document={"Bytes": variant})
-            # Only use LINE blocks to avoid word duplication and preserve document layout
-            extracted_lines = [
-                block["Text"].strip()
-                for block in response.get("Blocks", [])
-                if block.get("BlockType") == "LINE" and block.get("Text")
-            ]
-            if extracted_lines:
-                lines = extracted_lines
-                break
-        except Exception as exc:
-            logger.warning("Textract variant failed: %s", exc)
+        for variant in variants:
+            try:
+                response = client.detect_document_text(Document={"Bytes": variant})
+                extracted_lines = [
+                    block["Text"].strip()
+                    for block in response.get("Blocks", [])
+                    if block.get("BlockType") == "LINE" and block.get("Text")
+                ]
+                if extracted_lines:
+                    return "\n".join(extracted_lines)
+            except Exception as exc:
+                logger.warning("AWS Textract variant failed: %s", exc)
 
-    if not lines:
-        return """PRATIBHA LITTLE FLOWER ACADEMY
-ID CARD
-Name : Ramiz Ahmed Sakil
-Class : Six
-Roll : 01
-Section : 2009"""
+    # 3. Local RapidOCR Fallback
+    local_text = _run_local_rapidocr(image_bytes)
+    if local_text:
+        return local_text
 
-    return "\n".join(lines)
+    return ""
 
 
 def _clean_name(raw: str) -> str:
     cleaned = re.sub(
-        r"\s+(?:CLASS|ROLL|SEC|SECTION|DOB|DATE|BLOOD|MOBILE|PHONE|ID|STUDENT).*$",
+        r"\s+\b(?:CLASS|ROLL|SEC|SECTION|DOB|DATE|BLOOD|MOBILE|PHONE|ID|STUDENT|COLLEGE|STREAM|YEAR)\b.*$",
         "",
         raw.strip(),
         flags=re.I,
@@ -95,7 +123,7 @@ def _clean_name(raw: str) -> str:
 
 def _clean_field(raw: str) -> str:
     cleaned = re.sub(
-        r"\s+(?:ROLL|SEC|SECTION|DOB|DATE|BLOOD|MOBILE|PHONE|ID|NAME).*$",
+        r"\s+\b(?:ROLL|SEC|SECTION|DOB|DATE|BLOOD|MOBILE|PHONE|ID|NAME|YEAR)\b.*$",
         "",
         raw.strip(),
         flags=re.I,
@@ -116,123 +144,128 @@ def extract_student_details(image_bytes: bytes) -> dict[str, Optional[str]]:
         "year": "1st",
     }
 
-    # 1. College / School Name: check first few lines for header
+    if not lines:
+        return details
+
+    # 1. College / Institution Name: Check top lines first
+    header_keywords = [
+        "COLLEGE", "UNIVERSITY", "INSTITUTE", "ACADEMY", "SCHOOL",
+        "VIDYALAYA", "CAMPUS", "TECHNOLOGY", "FACULTY", "POLYTECHNIC", "ENGINEERING"
+    ]
     for line in lines[:5]:
         upper = line.upper()
-        if any(
-            kw in upper
-            for kw in [
-                "ACADEMY",
-                "COLLEGE",
-                "INSTITUTE",
-                "UNIVERSITY",
-                "SCHOOL",
-                "VIDYALAYA",
-                "CAMPUS",
-                "TECHNOLOGY",
-                "FACULTY",
-            ]
-        ):
+        if any(kw in upper for kw in header_keywords):
             details["college"] = line.strip(" .:-_").title()
             break
-        elif (
-            not details["college"]
-            and "ID CARD" not in upper
-            and "STUDENT" not in upper
-            and len(line) > 5
-            and not re.search(r"[:=]", line)
-        ):
-            details["college"] = line.strip(" .:-_").title()
+    
+    if not details["college"]:
+        for line in lines[:3]:
+            upper = line.upper()
+            if (
+                "ID CARD" not in upper
+                and "STUDENT" not in upper
+                and "IDENTITY" not in upper
+                and len(line) > 5
+                and not re.search(r"[:=]", line)
+            ):
+                details["college"] = line.strip(" .:-_").title()
+                break
 
-    # 2. Iterate lines for specific labeled fields
+    # 2. Extract fields by searching each line
     for line in lines:
         upper = line.upper()
-        if upper in ["ID CARD", "IDENTITY CARD", "STUDENT ID CARD"]:
+        if any(h in upper for h in ["ID CARD", "IDENTITY CARD", "STUDENT CARD", "STUDENT IDENTITY"]):
             continue
 
         # Full Name
-        m_name = re.search(r"^(?:NAME|STUDENT\s*NAME)\s*[:#=-]\s*(.+)$", line, re.I)
-        if m_name and not details["name"]:
-            name_val = _clean_name(m_name.group(1))
-            if len(name_val) >= 2:
-                details["name"] = name_val
+        if not details["name"]:
+            m_name = re.search(r"^(?:NAME|STUDENT\s*NAME|FULL\s*NAME|STUDENT['’]?S\s*NAME)\s*[:#=-]?\s*(.+)$", line, re.I)
+            if m_name:
+                name_val = _clean_name(m_name.group(1))
+                if len(name_val) >= 2:
+                    details["name"] = name_val
 
-        # Student ID / Roll Number
-        m_id = re.search(
-            r"(?:ROLL\s*(?:NO|NUMBER)?|STUDENT\s*ID|REG(?:ISTRATION)?\s*(?:NO|ID)?|ADM(?:ISSION)?\s*(?:NO|ID)?|ID\s*(?!CARD))\s*[:#=-]?\s*([0-9]{1,10})",
-            line,
-            re.I,
-        )
-        if m_id and not details["student_id"]:
-            val = m_id.group(1).replace("O", "0").replace("I", "1")
-            if val.isdigit():
-                num = int(val)
-                details["student_id"] = str(num) if 1 <= num <= 100 else str(num % 100 or 1)
+        # Student ID / Roll / Reg Number
+        if not details["student_id"]:
+            m_id = re.search(
+                r"(?:ROLL\s*(?:NO|NUMBER)?|STUDENT\s*ID|REG(?:ISTRATION)?\s*(?:NO|ID)?|ADM(?:ISSION)?\s*(?:NO|ID)?|ENROLLMENT\s*(?:NO|ID)?|ID\s*(?!CARD))\s*[:#=-]?\s*([A-Za-z0-9\/-]{1,20})",
+                line,
+                re.I,
+            )
+            if m_id:
+                val = m_id.group(1).strip()
+                if len(val) >= 1 and not any(k in val.upper() for k in ["CARD", "IDENTITY", "STUDENT", "VALID"]):
+                    details["student_id"] = val
 
-        # Stream / Course / Class / Branch
-        m_stream = re.search(
-            r"^(?:CLASS|STREAM|COURSE|BRANCH|DEPT|DEPARTMENT)\s*[:#=-]\s*(.+)$",
-            line,
-            re.I,
-        )
-        if m_stream and not details["stream"]:
-            stream_val = _clean_field(m_stream.group(1))
-            if stream_val:
-                details["stream"] = stream_val
+        # Stream / Course / Class / Branch / Department
+        if not details["stream"]:
+            m_stream = re.search(
+                r"^(?:CLASS|STREAM|COURSE|BRANCH|DEPT|DEPARTMENT|PROGRAM)\s*[:#=-]?\s*(.+)$",
+                line,
+                re.I,
+            )
+            if m_stream:
+                stream_val = _clean_field(m_stream.group(1))
+                if stream_val and not any(k in stream_val.upper() for k in ["CARD", "IDENTITY", "STUDENT"]):
+                    details["stream"] = stream_val
 
-        # Year
+        # Year / Semester
         m_year = re.search(
-            r"\b(1ST|2ND|3RD|4TH|5TH|FIRST|SECOND|THIRD|FOURTH|FINAL)\s*(?:YEAR|YR)?\b",
+            r"\b(1ST|2ND|3RD|4TH|5TH|FIRST|SECOND|THIRD|FOURTH|FINAL)\s*(?:YEAR|YR|SEM)?\b",
             line,
             re.I,
         )
         if m_year:
             y_map = {
-                "1ST": "1st",
-                "2ND": "2nd",
-                "3RD": "3rd",
-                "4TH": "4th",
-                "5TH": "5th",
-                "FIRST": "1st",
-                "SECOND": "2nd",
-                "THIRD": "3rd",
-                "FOURTH": "4th",
-                "FINAL": "4th",
+                "1ST": "1st", "2ND": "2nd", "3RD": "3rd", "4TH": "4th", "5TH": "5th",
+                "FIRST": "1st", "SECOND": "2nd", "THIRD": "3rd", "FOURTH": "4th", "FINAL": "4th",
             }
             details["year"] = y_map.get(m_year.group(1).upper(), "1st")
 
-    # 3. Fallbacks if any field is still missing
+    # 3. Smart Unlabeled Name Fallback
     if not details["name"]:
-        m = re.search(r"NAME\s*[:#=-]\s*([A-Za-z ]{2,35})", text, re.I)
-        if m:
-            details["name"] = _clean_name(m.group(1))
-        else:
-            details["name"] = "Ramiz Ahmed Sakil"
+        # Search lines that look like candidate names (2-4 capitalized words, no numbers or keywords)
+        exclude_words = {
+            "ID", "CARD", "STUDENT", "IDENTITY", "COLLEGE", "UNIVERSITY", "SCHOOL",
+            "ACADEMY", "INSTITUTE", "DOB", "DATE", "BLOOD", "MOBILE", "PHONE", "ROLL",
+            "REGISTRATION", "ADDRESS", "VALID", "UPTO", "PRINCIPAL", "SIGNATURE"
+        }
+        for line in lines[1:6]:
+            words = line.split()
+            if 2 <= len(words) <= 4 and not any(char.isdigit() for char in line):
+                upper_words = [w.upper() for w in words]
+                if not any(w in exclude_words for w in upper_words):
+                    details["name"] = line.strip(" .:-_").title()
+                    break
 
-    if not details["college"]:
-        m = re.search(r"([A-Za-z ]{3,40}(?:ACADEMY|COLLEGE|INSTITUTE|UNIVERSITY|SCHOOL))", text, re.I)
-        if m:
-            details["college"] = m.group(1).strip(" .:-_").title()
-        else:
-            details["college"] = "Pratibha Little Flower Academy"
-
+    # 4. Smart Stream Keyword Search if missing
     if not details["stream"]:
-        m = re.search(r"(?:CLASS|STREAM|COURSE|BRANCH)\s*[:#=-]\s*([A-Za-z0-9 ]{1,20})", text, re.I)
-        if m:
-            details["stream"] = _clean_field(m.group(1))
-        else:
-            details["stream"] = "Six"
+        stream_keywords = [
+            "B.TECH", "BTECH", "B.SC", "BSC", "B.E", "BE", "M.TECH", "MBA", "BBA",
+            "B.COM", "BCOM", "COMPUTER SCIENCE", "COMPUTER", "CSE", "ECE", "MECHANICAL", "CIVIL",
+            "PHYSICS", "CHEMISTRY", "MATHEMATICS", "SCIENCE", "ARTS", "COMMERCE", "INFORMATION TECHNOLOGY"
+        ]
+        for line in lines:
+            upper = line.upper()
+            if any(h in upper for h in ["ID CARD", "IDENTITY", "STUDENT CARD"]):
+                continue
+            for kw in stream_keywords:
+                if re.search(r"\b" + re.escape(kw) + r"\b", upper):
+                    details["stream"] = line.strip(" .:-_").title()
+                    break
+            if details["stream"]:
+                break
 
+    # 5. Smart ID Standalone Search if missing
     if not details["student_id"]:
-        m = re.search(r"ROLL\s*[:#=-]?\s*([0-9]{1,4})", text, re.I)
-        if m:
-            num = int(m.group(1))
-            details["student_id"] = str(num) if 1 <= num <= 100 else str(num % 100 or 1)
-        else:
-            details["student_id"] = "1"
-
-    if not details["year"] or details["year"] not in ["1st", "2nd", "3rd", "4th", "5th"]:
-        details["year"] = "1st"
+        for line in lines:
+            # Look for 3-12 digit sequence or roll number like 21BCE0491
+            m = re.search(r"\b([A-Z0-9]{3,14})\b", line)
+            if m:
+                val = m.group(1)
+                if any(c.isdigit() for c in val) and not val.upper() in ["CARD", "STUDENT", "VALID"]:
+                    details["student_id"] = val
+                    break
 
     return details
 
