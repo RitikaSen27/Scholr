@@ -80,3 +80,18 @@ export interface NoteDetail {
   review_count: number;
   reviews: Review[];
 }
+
+export type ReportReason =
+  | "inappropriate"
+  | "spam"
+  | "wrong_subject"
+  | "plagiarism"
+  | "other";
+
+export interface ReportResponse {
+  id: number;
+  note_id: number;
+  reason: string;
+  message: string;
+}
+

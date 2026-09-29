@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Download, Folder, FolderOpen, FileText, ChevronDown,
   Search, BookOpen, Clock, User, Star, Eye, X, Send,
-  MessageSquare,
+  MessageSquare, Flag, AlertTriangle,
 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -66,9 +66,11 @@ function StarRating({
 function NoteDetailModal({
   noteId,
   onClose,
+  onReportDeleted,
 }: {
   noteId: number;
   onClose: () => void;
+  onReportDeleted?: () => void;
 }) {
   const { user } = useAuthStore();
   const [detail, setDetail] = useState<NoteDetail | null>(null);
@@ -76,6 +78,11 @@ function NoteDetailModal({
   const [myRating, setMyRating] = useState(0);
   const [myComment, setMyComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Report modal state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState<"inappropriate" | "spam" | "wrong_subject" | "plagiarism" | "other">("inappropriate");
+  const [reporting, setReporting] = useState(false);
 
   const fetchDetail = useCallback(async () => {
     setLoading(true);
@@ -126,6 +133,33 @@ function NoteDetailModal({
     }
   }
 
+  async function submitReport() {
+    setReporting(true);
+    try {
+      const { data } = await api.post<{ message: string; note_id: number }>(`/api/notes/report/${noteId}`, {
+        reason: reportReason,
+      });
+
+      if (data.message.toLowerCase().includes("removed") || data.message.toLowerCase().includes("deleted")) {
+        toast.success("This document received 3+ reports and has been automatically removed.");
+        onClose();
+        onReportDeleted?.();
+      } else {
+        toast.success(data.message || "Report submitted successfully.");
+        setShowReportModal(false);
+      }
+    } catch (err: unknown) {
+      const msg =
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        (err as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      toast.error(typeof msg === "string" ? msg : "Failed to submit report");
+    } finally {
+      setReporting(false);
+    }
+  }
+
   // Close on Escape key
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -151,7 +185,7 @@ function NoteDetailModal({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="glass rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="glass rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative"
         style={{ border: "1px solid var(--border-subtle)" }}
       >
         {/* Header */}
@@ -181,13 +215,118 @@ function NoteDetailModal({
               )}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors flex-shrink-0"
-          >
-            <X size={18} style={{ color: "var(--text-muted)" }} />
-          </button>
+          <div className="flex items-center gap-2">
+            {detail && (
+              <button
+                id="report-note-btn"
+                onClick={() => setShowReportModal(true)}
+                className="px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold hover:bg-rose-500/20 text-rose-400 transition-colors"
+                title="Report inappropriate document"
+                style={{ border: "1px solid rgba(244,63,94,0.3)" }}
+              >
+                <Flag size={13} />
+                <span>Report</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors flex-shrink-0"
+            >
+              <X size={18} style={{ color: "var(--text-muted)" }} />
+            </button>
+          </div>
         </div>
+
+        {/* Report Modal Popover Overlay */}
+        <AnimatePresence>
+          {showReportModal && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute inset-0 z-50 flex items-center justify-center p-6"
+              style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)" }}
+            >
+              <div
+                className="glass rounded-2xl p-6 w-full max-w-md space-y-4"
+                style={{ border: "1px solid rgba(244,63,94,0.4)" }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-rose-400 font-bold text-base">
+                    <AlertTriangle size={18} />
+                    <span>Report Document</span>
+                  </div>
+                  <button
+                    onClick={() => setShowReportModal(false)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+                  >
+                    <X size={16} style={{ color: "var(--text-muted)" }} />
+                  </button>
+                </div>
+
+                <p className="text-xs text-secondary leading-relaxed">
+                  Help keep Scholr safe and relevant. If a document receives <strong className="text-rose-400">3 reports</strong> from different students, it will be <strong className="text-rose-400">automatically deleted</strong>.
+                </p>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted block">Select Reason:</label>
+                  {[
+                    { id: "inappropriate", label: "Inappropriate or offensive content" },
+                    { id: "spam", label: "Spam or deceptive upload" },
+                    { id: "wrong_subject", label: "Wrong subject or course code" },
+                    { id: "plagiarism", label: "Copyright infringement / Plagiarism" },
+                    { id: "other", label: "Other issue" },
+                  ].map((item) => (
+                    <label
+                      key={item.id}
+                      className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all hover:bg-white/5"
+                      style={{
+                        border: reportReason === item.id ? "1px solid rgba(244,63,94,0.6)" : "1px solid var(--border-subtle)",
+                        background: reportReason === item.id ? "rgba(244,63,94,0.1)" : "rgba(255,255,255,0.02)",
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="reportReason"
+                        value={item.id}
+                        checked={reportReason === item.id}
+                        onChange={() => setReportReason(item.id as typeof reportReason)}
+                        className="accent-rose-500"
+                      />
+                      <span className="text-xs font-medium text-primary">{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowReportModal(false)}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-semibold hover:bg-white/5 transition-all"
+                    style={{ border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    id="submit-report-btn"
+                    onClick={submitReport}
+                    disabled={reporting}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    style={{ background: "linear-gradient(135deg, #ef4444, #f43f5e)" }}
+                  >
+                    {reporting ? (
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Flag size={13} />
+                        <span>Submit Report</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
@@ -575,6 +714,7 @@ export default function NotesPage() {
           <NoteDetailModal
             noteId={previewNoteId}
             onClose={() => setPreviewNoteId(null)}
+            onReportDeleted={fetchNotes}
           />
         )}
       </AnimatePresence>

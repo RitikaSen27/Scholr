@@ -143,3 +143,33 @@ class NoteDetail(BaseModel):
     avg_rating: float = 0.0
     review_count: int = 0
     reviews: List[ReviewOut] = []
+
+
+# ──── Reports ─────────────────────────────────────────────────────────────────
+ALLOWED_REPORT_REASONS = [
+    "inappropriate",
+    "spam",
+    "wrong_subject",
+    "plagiarism",
+    "other",
+]
+
+
+class ReportCreate(BaseModel):
+    reason: str = Field(min_length=1, max_length=100)
+
+    @field_validator("reason")
+    @classmethod
+    def validate_reason(cls, value: str) -> str:
+        if value.lower() not in ALLOWED_REPORT_REASONS:
+            raise ValueError(
+                f"Reason must be one of: {', '.join(ALLOWED_REPORT_REASONS)}"
+            )
+        return value.lower()
+
+
+class ReportOut(BaseModel):
+    id: int
+    note_id: int
+    reason: str
+    message: str

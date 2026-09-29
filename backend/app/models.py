@@ -36,6 +36,7 @@ class User(Base):
     badges = relationship("Badge", back_populates="user", cascade="all, delete-orphan")
     notes = relationship("Note", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
+    reports = relationship("Report", back_populates="user", cascade="all, delete-orphan")
 
 
 class Badge(Base):
@@ -65,6 +66,7 @@ class Note(Base):
 
     user = relationship("User", back_populates="notes")
     reviews = relationship("Review", back_populates="note", cascade="all, delete-orphan")
+    reports = relationship("Report", back_populates="note", cascade="all, delete-orphan")
 
 
 class Review(Base):
@@ -82,3 +84,19 @@ class Review(Base):
 
     user = relationship("User", back_populates="reviews")
     note = relationship("Note", back_populates="reviews")
+
+
+class Report(Base):
+    __tablename__ = "reports"
+    __table_args__ = (
+        UniqueConstraint("user_id", "note_id", name="uq_user_note_report"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    note_id = Column(Integer, ForeignKey("notes.id", ondelete="CASCADE"), nullable=False)
+    reason = Column(String, nullable=False)          # e.g. "inappropriate", "spam", "wrong subject"
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+    user = relationship("User", back_populates="reports")
+    note = relationship("Note", back_populates="reports")
