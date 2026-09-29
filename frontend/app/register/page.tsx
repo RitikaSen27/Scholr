@@ -9,6 +9,7 @@ import {
   Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, ArrowRight,
 } from "lucide-react";
 import api from "@/lib/api";
+import { parseIdCardClient } from "@/lib/ocrClient";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { AuthResponse } from "@/types";
 import toast from "react-hot-toast";
@@ -49,10 +50,12 @@ export default function RegisterPage() {
     setOcrError(null);
     setUploading(true);
 
-    const fd = new FormData();
-    fd.append("file", file);
+    let extracted = { student_id: "", name: "", college: "", stream: "", year: "" };
 
+    // 1. Try Backend API
     try {
+      const fd = new FormData();
+      fd.append("file", file);
       const { data } = await api.post<{
         student_id: string;
         name?: string | null;
@@ -62,29 +65,51 @@ export default function RegisterPage() {
       }>("/api/ocr/extract-id", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setForm((prev) => ({
-        ...prev,
-        student_id: data.student_id,
-        name: data.name || prev.name,
-        college: data.college || prev.college,
-        stream: data.stream || prev.stream,
-        year: data.year || prev.year,
-      }));
-      toast.success(`Student ID detected: ${data.student_id}`);
-      setStep(2);
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        "Could not auto-extract ID. You can enter your Student ID manually below to continue.";
-      setOcrError(msg);
-      setForm((prev) => ({
-        ...prev,
-        student_id: prev.student_id || "1",
-      }));
-      toast.error(msg);
-    } finally {
-      setUploading(false);
+      if (data.name && data.college) {
+        extracted = {
+          student_id: data.student_id || "",
+          name: data.name || "",
+          college: data.college || "",
+          stream: data.stream || "",
+          year: data.year || "1st",
+        };
+      }
+    } catch {
+      // API call failed or error, fallback to browser OCR
     }
+
+    // 2. Fallback to Client-side Tesseract WASM if details missing
+    if (!extracted.name || !extracted.college) {
+      try {
+        const clientData = await parseIdCardClient(file);
+        extracted = {
+          student_id: extracted.student_id || clientData.student_id || "0023",
+          name: extracted.name || clientData.name,
+          college: extracted.college || clientData.college,
+          stream: extracted.stream || clientData.stream,
+          year: extracted.year || clientData.year || "1st",
+        };
+      } catch (clientErr) {
+        console.warn("Client OCR error:", clientErr);
+      }
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      student_id: extracted.student_id || prev.student_id || "0023",
+      name: extracted.name || prev.name,
+      college: extracted.college || prev.college,
+      stream: extracted.stream || prev.stream,
+      year: extracted.year || prev.year || "1st",
+    }));
+
+    if (extracted.name) {
+      toast.success(`Extracted details for ${extracted.name}`);
+    } else {
+      toast.success("ID card uploaded! Please confirm your profile details.");
+    }
+    setStep(2);
+    setUploading(false);
   }
 
   function continueWithManualId() {
