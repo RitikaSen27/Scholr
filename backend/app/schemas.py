@@ -112,3 +112,34 @@ class UploadResponse(BaseModel):
 class WSMessage(BaseModel):
     type: str          # "upload_success" | "badge_unlocked" | "streak_update"
     payload: dict
+
+
+# ──── Reviews ─────────────────────────────────────────────────────────────────
+class ReviewCreate(BaseModel):
+    rating: int = Field(ge=1, le=5)
+    comment: Optional[str] = Field(None, max_length=500)
+
+
+class ReviewOut(BaseModel):
+    id: int
+    user_id: int
+    note_id: int
+    rating: int
+    comment: Optional[str]
+    reviewer_name: str
+    created_at: datetime
+
+
+class NoteDetail(BaseModel):
+    """Extended note info with preview URL, average rating, and reviews."""
+    id: int
+    subject_code: str
+    subject_name: str
+    professor: str
+    tag: str
+    upload_date: date
+    uploader_name: str
+    preview_url: Optional[str] = None
+    avg_rating: float = 0.0
+    review_count: int = 0
+    reviews: List[ReviewOut] = []

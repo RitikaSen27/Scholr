@@ -195,3 +195,139 @@ def download_note(
     db.commit()
 
     return {"download_url": url, "expires_in": 300}
+
+
+@router.get("/preview/{note_id}")
+def preview_note(
+    note_id: int,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(get_current_user),
+):
+    """
+    Generate a short-lived presigned S3 URL for in-browser preview.
+    """
+    note = db.query(models.Note).filter(models.Note.id == note_id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    url = generate_presigned_url(note.file_path, expiry_seconds=600)
+    if not url:
+        raise HTTPException(status_code=500, detail="Could not generate preview link")
+
+    return {"preview_url": url, "filename": note.original_filename, "expires_in": 600}
+
+
+@router.get("/detail/{note_id}", response_model=schemas.NoteDetail)
+def note_detail(
+    note_id: int,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(get_current_user),
+):
+    """
+    Return note info with preview URL, average rating, and all reviews.
+    """
+    result = (
+        db.query(models.Note, models.User.name)
+        .join(models.User, models.Note.user_id == models.User.id)
+        .filter(models.Note.id == note_id)
+        .first()
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    note, uploader_name = result
+
+    # Generate preview URL
+    preview_url = generate_presigned_url(note.file_path, expiry_seconds=600)
+
+    # Gather reviews
+    review_rows = (
+        db.query(models.Review, models.User.name)
+        .join(models.User, models.Review.user_id == models.User.id)
+        .filter(models.Review.note_id == note_id)
+        .order_by(models.Review.created_at.desc())
+        .all()
+    )
+
+    reviews = [
+        schemas.ReviewOut(
+            id=r.id,
+            user_id=r.user_id,
+            note_id=r.note_id,
+            rating=r.rating,
+            comment=r.comment,
+            reviewer_name=name,
+            created_at=r.created_at,
+        )
+        for r, name in review_rows
+    ]
+
+    avg_rating = sum(r.rating for r in reviews) / len(reviews) if reviews else 0.0
+
+    return schemas.NoteDetail(
+        id=note.id,
+        subject_code=note.subject_code,
+        subject_name=note.subject_name,
+        professor=note.professor,
+        tag=note.tag,
+        upload_date=note.upload_date,
+        uploader_name=uploader_name,
+        preview_url=preview_url,
+        avg_rating=round(avg_rating, 1),
+        review_count=len(reviews),
+        reviews=reviews,
+    )
+
+
+@router.post("/review/{note_id}", response_model=schemas.ReviewOut, status_code=201)
+def create_review(
+    note_id: int,
+    payload: schemas.ReviewCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Submit a rating (1-5) and optional comment for a note.
+    Each user can only review a note once; subsequent calls update the review.
+    """
+    note = db.query(models.Note).filter(models.Note.id == note_id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    # Don't allow self-review
+    if note.user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot review your own note")
+
+    # Check for existing review — update if exists
+    existing = (
+        db.query(models.Review)
+        .filter(models.Review.user_id == current_user.id, models.Review.note_id == note_id)
+        .first()
+    )
+
+    if existing:
+        existing.rating = payload.rating
+        existing.comment = payload.comment
+        db.commit()
+        db.refresh(existing)
+        review = existing
+    else:
+        review = models.Review(
+            user_id=current_user.id,
+            note_id=note_id,
+            rating=payload.rating,
+            comment=payload.comment,
+        )
+        db.add(review)
+        db.commit()
+        db.refresh(review)
+
+    return schemas.ReviewOut(
+        id=review.id,
+        user_id=review.user_id,
+        note_id=review.note_id,
+        rating=review.rating,
+        comment=review.comment,
+        reviewer_name=current_user.name,
+        created_at=review.created_at,
+    )

@@ -56,3 +56,27 @@ export interface UploadResponse {
   streak: number;
   message: string;
 }
+
+export interface Review {
+  id: number;
+  user_id: number;
+  note_id: number;
+  rating: number;
+  comment: string | null;
+  reviewer_name: string;
+  created_at: string;
+}
+
+export interface NoteDetail {
+  id: number;
+  subject_code: string;
+  subject_name: string;
+  professor: string;
+  tag: string;
+  upload_date: string;
+  uploader_name: string;
+  preview_url: string | null;
+  avg_rating: number;
+  review_count: number;
+  reviews: Review[];
+}

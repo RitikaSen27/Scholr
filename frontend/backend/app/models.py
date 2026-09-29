@@ -2,8 +2,8 @@ import enum
 from datetime import datetime, date
 
 from sqlalchemy import (
-    Column, Integer, String, ForeignKey, DateTime, Date,
-    Enum as SAEnum, func
+    Column, Integer, String, ForeignKey, DateTime, Date, Text,
+    Enum as SAEnum, UniqueConstraint, func
 )
 from sqlalchemy.orm import relationship
 
@@ -35,6 +35,7 @@ class User(Base):
 
     badges = relationship("Badge", back_populates="user", cascade="all, delete-orphan")
     notes = relationship("Note", back_populates="user", cascade="all, delete-orphan")
+    reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
 
 
 class Badge(Base):
@@ -63,3 +64,21 @@ class Note(Base):
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
     user = relationship("User", back_populates="notes")
+    reviews = relationship("Review", back_populates="note", cascade="all, delete-orphan")
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+    __table_args__ = (
+        UniqueConstraint("user_id", "note_id", name="uq_user_note_review"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    note_id = Column(Integer, ForeignKey("notes.id", ondelete="CASCADE"), nullable=False)
+    rating = Column(Integer, nullable=False)        # 1–5
+    comment = Column(Text, nullable=True)            # optional short comment
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+    user = relationship("User", back_populates="reviews")
+    note = relationship("Note", back_populates="reviews")
