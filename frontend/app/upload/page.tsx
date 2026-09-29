@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, FileText, User, Tag, BookOpen,
-  CheckCircle, AlertCircle,
+  CheckCircle, AlertCircle, Eye, X, Maximize2, Minimize2,
 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -27,6 +27,28 @@ export default function UploadPage() {
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState<UploadResponse | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewExpanded, setPreviewExpanded] = useState(false);
+
+  // Create a blob URL for the selected file (PDFs only)
+  const previewUrl = useMemo(() => {
+    if (file && file.type === "application/pdf") {
+      return URL.createObjectURL(file);
+    }
+    return null;
+  }, [file]);
+
+  // Revoke blob URL on cleanup
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  // Auto-show preview when a file is selected
+  useEffect(() => {
+    if (file) setShowPreview(true);
+  }, [file]);
 
   const [form, setForm] = useState({
     subject_code: "",
@@ -215,6 +237,81 @@ export default function UploadPage() {
                 className="hidden"
               />
             </div>
+
+            {/* File Preview Section */}
+            <AnimatePresence>
+              {file && showPreview && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="glass rounded-2xl overflow-hidden"
+                    style={{ border: "1px solid var(--border-subtle)" }}>
+                    {/* Preview Header */}
+                    <div className="flex items-center justify-between px-4 py-3"
+                      style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                      <div className="flex items-center gap-2">
+                        <Eye size={14} style={{ color: "var(--accent-cyan)" }} />
+                        <span className="text-xs font-semibold uppercase tracking-wider"
+                          style={{ color: "var(--text-muted)" }}>
+                          Preview
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {previewUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewExpanded(!previewExpanded)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+                            title={previewExpanded ? "Collapse" : "Expand"}
+                          >
+                            {previewExpanded
+                              ? <Minimize2 size={13} style={{ color: "var(--text-muted)" }} />
+                              : <Maximize2 size={13} style={{ color: "var(--text-muted)" }} />
+                            }
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setShowPreview(false)}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+                        >
+                          <X size={13} style={{ color: "var(--text-muted)" }} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Preview Content */}
+                    {previewUrl ? (
+                      <motion.div
+                        animate={{ height: previewExpanded ? 500 : 280 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <iframe
+                          src={previewUrl}
+                          title="File Preview"
+                          className="w-full h-full"
+                          style={{ border: "none", background: "#1a1a2e" }}
+                        />
+                      </motion.div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
+                        <FileText size={40} className="mb-3 opacity-40" style={{ color: "var(--text-muted)" }} />
+                        <p className="font-medium text-sm mb-1" style={{ color: "var(--text-secondary)" }}>
+                          Preview not available for {file.name.split(".").pop()?.toUpperCase()} files
+                        </p>
+                        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                          Only PDF files support in-browser preview. You can still upload this file.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Form fields */}
             <div className="glass rounded-2xl p-6 space-y-4">
