@@ -5,8 +5,13 @@ from app.config import settings
 from app.database import Base, engine
 from app.routers import auth_router, ocr_router, notes_router, ws_router
 
-# Create all tables (Alembic handles migrations in production)
-Base.metadata.create_all(bind=engine)
+import logging
+logger = logging.getLogger(__name__)
+try:
+    # Create all tables (Alembic handles migrations in production)
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    logger.warning("Could not connect to database on startup: %s", e)
 
 app = FastAPI(
     title="College Notes Sharing API",
