@@ -16,3 +16,4 @@ websockets
 httpx
 email-validator
 rapidocr-onnxruntime
+google-genai

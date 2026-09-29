@@ -15,3 +15,5 @@ python-dotenv
 websockets
 httpx
 email-validator
+rapidocr-onnxruntime
+google-genai

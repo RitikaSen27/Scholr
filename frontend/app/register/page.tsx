@@ -88,9 +88,8 @@ export default function RegisterPage() {
   }
 
   function continueWithManualId() {
-    const studentId = Number(form.student_id);
-    if (!Number.isInteger(studentId) || studentId < 1 || studentId > 100) {
-      toast.error("Enter a Student ID from 1 to 100.");
+    if (!form.student_id.trim()) {
+      toast.error("Please enter a Student ID.");
       return;
     }
     setOcrError(null);
@@ -253,14 +252,12 @@ export default function RegisterPage() {
                 </div>
                 <InputField
                   id="manual-student-id"
-                  label="Student ID (1–100)"
+                  label="Student ID / Roll No"
                   icon={<IdCard size={15} />}
                   value={form.student_id}
                   onChange={set("student_id")}
-                  placeholder="e.g. 9 or 100"
-                  type="number"
-                  min={1}
-                  max={100}
+                  placeholder="e.g. 1051 or 21BCE0491"
+                  type="text"
                   required
                 />
                 <button
@@ -309,22 +306,19 @@ export default function RegisterPage() {
                   Complete Your Profile
                 </h2>
                 <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                  Student ID: <span className="font-mono text-amber-400">{form.student_id || "—"}</span>{" "}
-                  (editable, 1–100)
+                  Student ID: <span className="font-mono text-amber-400">{form.student_id || "—"}</span>
                 </p>
               </div>
 
               {/* Student ID can be corrected after OCR or entered manually. */}
               <InputField
                 id="reg-student-id"
-                label="Student ID"
+                label="Student ID / Roll No"
                 icon={<IdCard size={15} />}
                 value={form.student_id}
                 onChange={set("student_id")}
-                placeholder="Enter 1–100"
-                type="number"
-                min={1}
-                max={100}
+                placeholder="e.g. 1051 or 21BCE0491"
+                type="text"
                 required
               />
 

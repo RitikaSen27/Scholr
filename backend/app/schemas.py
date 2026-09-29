@@ -16,7 +16,7 @@ class OCRResponse(BaseModel):
 
 # ──── Auth ────────────────────────────────────────────────────────────────────
 class RegisterRequest(BaseModel):
-    student_id: str = Field(min_length=1, max_length=3)
+    student_id: str = Field(min_length=1, max_length=50)
     email: EmailStr
     password: str
     name: str
@@ -27,9 +27,10 @@ class RegisterRequest(BaseModel):
     @field_validator("student_id")
     @classmethod
     def validate_student_id(cls, value: str) -> str:
-        if not value.isdigit() or not 1 <= int(value) <= 100:
-            raise ValueError("Student ID must be a number from 1 to 100")
-        return value
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Student ID cannot be empty")
+        return cleaned
 
 
 class LoginRequest(BaseModel):

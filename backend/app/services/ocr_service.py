@@ -1,5 +1,6 @@
 import io
 import logging
+import os
 import re
 from typing import Optional
 
@@ -39,6 +40,28 @@ def _image_variants(image_bytes: bytes) -> list[bytes]:
         return [image_bytes]
 
 
+def _run_gemini_ocr(image_bytes: bytes) -> str:
+    """Use Gemini Vision API if GEMINI_API_KEY is configured."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return ""
+    try:
+        from google import genai
+        from google.genai import types
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[
+                types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
+                "Extract all text lines visible on this student ID card image. Return ONLY line-by-line text."
+            ]
+        )
+        return response.text or ""
+    except Exception as exc:
+        logger.warning("Gemini OCR failed: %s", exc)
+    return ""
+
+
 def _run_local_rapidocr(image_bytes: bytes) -> str:
     """Run local RapidOCR engine directly on image bytes."""
     try:
@@ -55,9 +78,14 @@ def _run_local_rapidocr(image_bytes: bytes) -> str:
 
 def _extract_text(image_bytes: bytes) -> str:
     """
-    Extract text using AWS Textract if credentials are provided,
-    otherwise fallback to local RapidOCR.
+    Extract text using Gemini, AWS Textract, or local RapidOCR.
     """
+    # 1. Try Gemini Vision if API key is provided
+    gemini_text = _run_gemini_ocr(image_bytes)
+    if gemini_text:
+        return gemini_text
+
+    # 2. Try AWS Textract if credentials are provided
     if settings.AWS_ACCESS_KEY_ID and "paste" not in settings.AWS_ACCESS_KEY_ID.lower() and len(settings.AWS_ACCESS_KEY_ID) > 5:
         variants = _image_variants(image_bytes)
         client = _get_textract_client()
@@ -75,7 +103,7 @@ def _extract_text(image_bytes: bytes) -> str:
             except Exception as exc:
                 logger.warning("AWS Textract variant failed: %s", exc)
 
-    # Local OCR Fallback
+    # 3. Local RapidOCR Fallback
     local_text = _run_local_rapidocr(image_bytes)
     if local_text:
         return local_text
