@@ -94,19 +94,23 @@ export default function RegisterPage() {
       }
     }
 
+    const isBlurryOrUnclear = !extracted.name && !extracted.college;
+
     setForm((prev) => ({
       ...prev,
-      student_id: extracted.student_id || prev.student_id || "0023",
+      student_id: extracted.student_id || prev.student_id,
       name: extracted.name || prev.name,
       college: extracted.college || prev.college,
       stream: extracted.stream || prev.stream,
       year: extracted.year || prev.year || "1st",
     }));
 
-    if (extracted.name) {
-      toast.success(`Extracted details for ${extracted.name}`);
+    if (isBlurryOrUnclear) {
+      const errMsg = "The picture is not clear. Please upload a clear picture of your ID card.";
+      setOcrError(errMsg);
+      toast.error(errMsg);
     } else {
-      toast.success("ID card uploaded! Please confirm your profile details.");
+      toast.success(`Extracted details for ${extracted.name || "ID Card"}`);
     }
     setStep(2);
     setUploading(false);

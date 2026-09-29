@@ -245,31 +245,35 @@ function NoteDetailModal({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="absolute inset-0 z-50 flex items-center justify-center p-6"
-              style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)" }}
+              style={{ background: "rgba(10,10,18,0.92)", backdropFilter: "blur(12px)" }}
             >
               <div
-                className="glass rounded-2xl p-6 w-full max-w-md space-y-4"
-                style={{ border: "1px solid rgba(244,63,94,0.4)" }}
+                className="rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl"
+                style={{
+                  background: "#161622",
+                  border: "1px solid rgba(244,63,94,0.5)",
+                  color: "#f8fafc",
+                }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-rose-400 font-bold text-base">
                     <AlertTriangle size={18} />
-                    <span>Report Document</span>
+                    <span style={{ color: "#f87171" }}>Report Document</span>
                   </div>
                   <button
                     onClick={() => setShowReportModal(false)}
                     className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
                   >
-                    <X size={16} style={{ color: "var(--text-muted)" }} />
+                    <X size={16} style={{ color: "#94a3b8" }} />
                   </button>
                 </div>
 
-                <p className="text-xs text-secondary leading-relaxed">
-                  Help keep Scholr safe and relevant. If a document receives <strong className="text-rose-400">3 reports</strong> from different students, it will be <strong className="text-rose-400">automatically deleted</strong>.
+                <p className="text-xs leading-relaxed" style={{ color: "#cbd5e1" }}>
+                  Help keep Scholr safe and relevant. If a document receives <strong style={{ color: "#f87171" }}>3 reports</strong> from different students, it will be <strong style={{ color: "#f87171" }}>automatically deleted</strong>.
                 </p>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted block">Select Reason:</label>
+                  <label className="text-xs font-semibold block" style={{ color: "#94a3b8" }}>Select Reason:</label>
                   {[
                     { id: "inappropriate", label: "Inappropriate or offensive content" },
                     { id: "spam", label: "Spam or deceptive upload" },
@@ -281,8 +285,8 @@ function NoteDetailModal({
                       key={item.id}
                       className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all hover:bg-white/5"
                       style={{
-                        border: reportReason === item.id ? "1px solid rgba(244,63,94,0.6)" : "1px solid var(--border-subtle)",
-                        background: reportReason === item.id ? "rgba(244,63,94,0.1)" : "rgba(255,255,255,0.02)",
+                        border: reportReason === item.id ? "1px solid #f43f5e" : "1px solid rgba(255,255,255,0.12)",
+                        background: reportReason === item.id ? "rgba(244,63,94,0.18)" : "rgba(255,255,255,0.04)",
                       }}
                     >
                       <input
@@ -291,9 +295,9 @@ function NoteDetailModal({
                         value={item.id}
                         checked={reportReason === item.id}
                         onChange={() => setReportReason(item.id as typeof reportReason)}
-                        className="accent-rose-500"
+                        className="accent-rose-500 w-4 h-4 cursor-pointer"
                       />
-                      <span className="text-xs font-medium text-primary">{item.label}</span>
+                      <span className="text-xs font-medium" style={{ color: "#ffffff" }}>{item.label}</span>
                     </label>
                   ))}
                 </div>
@@ -301,8 +305,8 @@ function NoteDetailModal({
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => setShowReportModal(false)}
-                    className="flex-1 py-2.5 rounded-xl text-xs font-semibold hover:bg-white/5 transition-all"
-                    style={{ border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-semibold hover:bg-white/10 transition-all"
+                    style={{ border: "1px solid rgba(255,255,255,0.2)", color: "#e2e8f0" }}
                   >
                     Cancel
                   </button>
