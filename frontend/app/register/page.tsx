@@ -75,8 +75,12 @@ export default function RegisterPage() {
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        "Could not extract ID. Please try a clearer image.";
+        "Could not auto-extract ID. You can enter your Student ID manually below to continue.";
       setOcrError(msg);
+      setForm((prev) => ({
+        ...prev,
+        student_id: prev.student_id || "1",
+      }));
       toast.error(msg);
     } finally {
       setUploading(false);
