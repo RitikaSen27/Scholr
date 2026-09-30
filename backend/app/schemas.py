@@ -102,6 +102,13 @@ class NoteFolder(BaseModel):
     notes: List[NoteOut]
 
 
+class SubjectSearchResult(BaseModel):
+    subject_code: str
+    subject_name: str
+    note_count: int
+
+
+
 class UploadResponse(BaseModel):
     note: NoteOut
     new_badges: List[BadgeOut] = []

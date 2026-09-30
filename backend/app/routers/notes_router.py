@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import date
 from typing import List
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -173,6 +173,82 @@ def list_notes(
         )
 
     return list(folders.values())
+
+
+# ──── Search (microfilter) ────────────────────────────────────────────────────
+@router.get("/search", response_model=List[schemas.SubjectSearchResult])
+def search_subjects(
+    q: str = Query(..., min_length=1, description="Search by paper code"),
+    db: Session = Depends(get_db),
+    _: models.User = Depends(get_current_user),
+):
+    """
+    Microfilter: search active notes by paper code (subject_code) only.
+    Results are grouped by paper code, so each code appears exactly once even
+    if uploaders typed the subject name differently. The displayed name is the
+    one from the most recently uploaded note under that code.
+    """
+    term = q.strip()
+    if not term:
+        return []
+
+    escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+    rows = (
+        db.query(models.Note.subject_code, models.Note.subject_name)
+        .filter(models.Note.subject_code.ilike(f"%{escaped}%", escape="\\"))
+        .order_by(models.Note.created_at.desc())
+        .all()
+    )
+
+    grouped: dict[str, schemas.SubjectSearchResult] = {}
+    for code, name in rows:
+        if code not in grouped:
+            grouped[code] = schemas.SubjectSearchResult(
+                subject_code=code, subject_name=name, note_count=0
+            )
+        grouped[code].note_count += 1
+
+    return sorted(grouped.values(), key=lambda r: r.subject_code)
+
+
+# ──── Notes for a specific subject ───────────────────────────────────────────
+@router.get("/subject/{subject_code}", response_model=schemas.NoteFolder)
+def get_subject_notes(
+    subject_code: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Return all notes for a given subject code."""
+    code = subject_code.upper().strip()
+    notes = (
+        db.query(models.Note, models.User.name)
+        .join(models.User, models.Note.user_id == models.User.id)
+        .filter(models.Note.subject_code == code)
+        .order_by(models.Note.created_at.desc())
+        .all()
+    )
+
+    if not notes:
+        raise HTTPException(status_code=404, detail="Subject not found or has no notes")
+
+    folder = schemas.NoteFolder(
+        subject_code=code,
+        subject_name=notes[0][0].subject_name,
+        notes=[
+            schemas.NoteOut(
+                id=note.id,
+                subject_code=note.subject_code,
+                subject_name=note.subject_name,
+                professor=note.professor,
+                tag=note.tag,
+                upload_date=note.upload_date,
+                uploader_name=uploader_name,
+            )
+            for note, uploader_name in notes
+        ],
+    )
+    return folder
 
 
 @router.get("/download/{note_id}")
