@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Download, Folder, FolderOpen, FileText, ChevronDown,
   Search, BookOpen, Clock, User, Star, Eye, X, Send,
-  MessageSquare, Flag, AlertTriangle,
+  MessageSquare, Flag, AlertTriangle, Filter, Hash, Tag, Check,
 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -471,6 +471,17 @@ function NoteDetailModal({
 }
 
 /* ─── Main Notes Page ───────────────────────────────────────────────────── */
+type FilterCategory = "all" | "code" | "name" | "professor" | "tag";
+
+const FILTER_OPTIONS = [
+  { id: "all", label: "All Fields", icon: Search, hint: "Search code, name, professor or tag" },
+  { id: "code", label: "Subject Code", icon: Hash, hint: "e.g. CS101, MATH201" },
+  { id: "name", label: "Subject Name", icon: BookOpen, hint: "e.g. Data Structures, Physics" },
+  { id: "professor", label: "Professor Name", icon: User, hint: "e.g. Dr. Sharma, Prof. Alan" },
+  { id: "tag", label: "Tag", icon: Tag, hint: "e.g. Unit 1, Syllabus, Midterm" },
+] as const;
+
+/* ─── Main Notes Page ───────────────────────────────────────────────────── */
 export default function NotesPage() {
   const router = useRouter();
   const { user, hasHydrated } = useAuthStore();
@@ -478,8 +489,22 @@ export default function NotesPage() {
   const [loading, setLoading] = useState(true);
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState<FilterCategory>("all");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [downloading, setDownloading] = useState<number | null>(null);
   const [previewNoteId, setPreviewNoteId] = useState<number | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (hasHydrated && !user) {
@@ -526,12 +551,47 @@ export default function NotesPage() {
     });
   }
 
-  // Filter
-  const filtered = folders.filter(
-    (f) =>
-      f.subject_code.toLowerCase().includes(search.toLowerCase()) ||
-      f.subject_name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Multi-field search filtering
+  const query = search.trim().toLowerCase();
+  const filteredFolders = folders
+    .map((folder) => {
+      if (!query) {
+        return { ...folder, matchingNotes: folder.notes };
+      }
+
+      const matchingNotes = folder.notes.filter((note) => {
+        if (filterCategory === "code") {
+          return folder.subject_code.toLowerCase().includes(query);
+        }
+        if (filterCategory === "name") {
+          return folder.subject_name.toLowerCase().includes(query);
+        }
+        if (filterCategory === "professor") {
+          return note.professor.toLowerCase().includes(query);
+        }
+        if (filterCategory === "tag") {
+          return note.tag.toLowerCase().includes(query);
+        }
+        // "all"
+        return (
+          folder.subject_code.toLowerCase().includes(query) ||
+          folder.subject_name.toLowerCase().includes(query) ||
+          note.professor.toLowerCase().includes(query) ||
+          note.tag.toLowerCase().includes(query)
+        );
+      });
+
+      const headerMatches =
+        ((filterCategory === "all" || filterCategory === "code") && folder.subject_code.toLowerCase().includes(query)) ||
+        ((filterCategory === "all" || filterCategory === "name") && folder.subject_name.toLowerCase().includes(query));
+
+      if (headerMatches) {
+        return { ...folder, matchingNotes: folder.notes };
+      }
+
+      return { ...folder, matchingNotes };
+    })
+    .filter((folder) => folder.matchingNotes.length > 0);
 
   if (!user) return null;
 
@@ -544,29 +604,153 @@ export default function NotesPage() {
             All notes organized by subject. Click any note to preview & review.
           </p>
 
-          {/* Search */}
-          <div className="relative mb-8">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
-            <input
-              id="notes-search"
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by subject code or name..."
-              className="w-full pl-11 pr-4 py-3 rounded-2xl text-sm focus-ring transition-all"
+          {/* Search bar with Filter Dropdown */}
+          <div ref={searchContainerRef} className="relative mb-8 z-30">
+            <div
+              className="flex items-center gap-2 p-1.5 pl-4 rounded-2xl transition-all"
               style={{
                 background: "rgba(255,255,255,0.06)",
-                color: "var(--text-primary)",
-                border: "1px solid var(--border-subtle)",
+                border: isDropdownOpen ? "1px solid var(--accent-cyan)" : "1px solid var(--border-subtle)",
+                boxShadow: isDropdownOpen ? "0 0 16px rgba(6,182,212,0.2)" : "none",
               }}
-            />
+            >
+              <Search size={18} style={{ color: "var(--text-muted)" }} className="flex-shrink-0" />
+              
+              <input
+                id="notes-search"
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onFocus={() => setIsDropdownOpen(true)}
+                placeholder={
+                  filterCategory === "code" ? "Filter by Subject Code (e.g. CS101)..." :
+                  filterCategory === "name" ? "Filter by Subject Name (e.g. Data Structures)..." :
+                  filterCategory === "professor" ? "Filter by Professor Name (e.g. Dr. Smith)..." :
+                  filterCategory === "tag" ? "Filter by Tag (e.g. Midterm, Unit 1)..." :
+                  "Search notes by code, name, professor, or tag..."
+                }
+                className="w-full bg-transparent border-none text-sm outline-none py-1.5"
+                style={{ color: "var(--text-primary)" }}
+              />
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors mr-1"
+                >
+                  <X size={14} style={{ color: "var(--text-muted)" }} />
+                </button>
+              )}
+
+              {/* Filter Category Dropdown Trigger */}
+              <button
+                type="button"
+                id="filter-dropdown-trigger"
+                onClick={() => setIsDropdownOpen((prev) => !prev)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold flex-shrink-0 transition-all hover:bg-cyan-500/20"
+                style={{
+                  background: filterCategory === "all" ? "rgba(255,255,255,0.08)" : "rgba(6,182,212,0.2)",
+                  color: filterCategory === "all" ? "var(--text-secondary)" : "var(--accent-cyan)",
+                  border: filterCategory === "all" ? "1px solid var(--border-subtle)" : "1px solid rgba(6,182,212,0.4)",
+                }}
+              >
+                <Filter size={13} />
+                <span>
+                  {FILTER_OPTIONS.find((f) => f.id === filterCategory)?.label}
+                </span>
+                <ChevronDown size={13} className={`transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+            </div>
+
+            {/* Dropdown Menu */}
+            <AnimatePresence>
+              {isDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute left-0 right-0 top-full mt-2 z-50 rounded-2xl p-3 shadow-2xl glass"
+                  style={{
+                    background: "rgba(18,18,28,0.95)",
+                    backdropFilter: "blur(16px)",
+                    border: "1px solid var(--border-subtle)",
+                  }}
+                >
+                  <div className="flex items-center justify-between px-2 pb-2 mb-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                      Select Filter Category
+                    </span>
+                    {filterCategory !== "all" && (
+                      <button
+                        type="button"
+                        onClick={() => setFilterCategory("all")}
+                        className="text-[11px] font-semibold hover:underline"
+                        style={{ color: "var(--accent-cyan)" }}
+                      >
+                        Reset Filter
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    {FILTER_OPTIONS.map((opt) => {
+                      const Icon = opt.icon;
+                      const isSelected = filterCategory === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          id={`filter-opt-${opt.id}`}
+                          onClick={() => {
+                            setFilterCategory(opt.id);
+                            setIsDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all hover:bg-white/5"
+                          style={{
+                            background: isSelected ? "rgba(6,182,212,0.15)" : "transparent",
+                            border: isSelected ? "1px solid rgba(6,182,212,0.3)" : "1px solid transparent",
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                              style={{
+                                background: isSelected ? "rgba(6,182,212,0.2)" : "rgba(255,255,255,0.06)",
+                                color: isSelected ? "var(--accent-cyan)" : "var(--text-muted)",
+                              }}
+                            >
+                              <Icon size={16} />
+                            </div>
+                            <div>
+                              <p
+                                className="text-xs font-semibold"
+                                style={{ color: isSelected ? "var(--accent-cyan)" : "var(--text-primary)" }}
+                              >
+                                {opt.label}
+                              </p>
+                              <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                                {opt.hint}
+                              </p>
+                            </div>
+                          </div>
+
+                          {isSelected && <Check size={16} style={{ color: "var(--accent-cyan)" }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {loading ? (
             <div className="flex justify-center py-20">
               <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : filtered.length === 0 ? (
+          ) : filteredFolders.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -574,16 +758,18 @@ export default function NotesPage() {
             >
               <BookOpen size={48} className="mx-auto mb-4 opacity-30" style={{ color: "var(--text-muted)" }} />
               <p className="font-semibold" style={{ color: "var(--text-secondary)" }}>
-                {search ? "No subjects match your search" : "No notes uploaded yet"}
+                {search
+                  ? `No notes match "${search}" in ${FILTER_OPTIONS.find((f) => f.id === filterCategory)?.label}`
+                  : "No notes uploaded yet"}
               </p>
               <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-                {!search && "Be the first to share!"}
+                {search ? "Try selecting a different filter category or changing your search terms" : "Be the first to share!"}
               </p>
             </motion.div>
           ) : (
             <div className="space-y-4">
-              {filtered.map((folder, i) => {
-                const isOpen = openFolders.has(folder.subject_code);
+              {filteredFolders.map((folder, i) => {
+                const isOpen = openFolders.has(folder.subject_code) || !!query;
                 return (
                   <motion.div
                     key={folder.subject_code}
@@ -616,7 +802,7 @@ export default function NotesPage() {
                       <div className="flex items-center gap-3">
                         <span className="text-xs px-2 py-1 rounded-full"
                           style={{ background: "rgba(6,182,212,0.12)", color: "var(--accent-cyan)" }}>
-                          {folder.notes.length} note{folder.notes.length !== 1 ? "s" : ""}
+                          {folder.matchingNotes.length} note{folder.matchingNotes.length !== 1 ? "s" : ""}
                         </span>
                         <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
                           <ChevronDown size={16} style={{ color: "var(--text-muted)" }} />
@@ -635,7 +821,7 @@ export default function NotesPage() {
                           style={{ overflow: "hidden", borderTop: "1px solid var(--border-subtle)" }}
                         >
                           <div className="p-4 space-y-2">
-                            {folder.notes.map((note, j) => (
+                            {folder.matchingNotes.map((note, j) => (
                               <motion.div
                                 key={note.id}
                                 initial={{ opacity: 0, x: -10 }}
