@@ -621,7 +621,6 @@ export default function NotesPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                onFocus={() => setIsDropdownOpen(true)}
                 placeholder={
                   filterCategory === "code" ? "Filter by Subject Code (e.g. CS101)..." :
                   filterCategory === "name" ? "Filter by Subject Name (e.g. Data Structures)..." :
