@@ -15,13 +15,13 @@ const stats = [
 
 export default function HubPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, hasHydrated } = useAuthStore();
 
   useEffect(() => {
-    if (!user) router.replace("/login");
-  }, [user, router]);
+    if (hasHydrated && !user) router.replace("/login");
+  }, [user, hasHydrated, router]);
 
-  if (!user) return null;
+  if (!hasHydrated || !user) return null;
 
   return (
     <NotebookLayout>

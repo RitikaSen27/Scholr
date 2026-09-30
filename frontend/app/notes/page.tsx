@@ -473,7 +473,7 @@ function NoteDetailModal({
 /* ─── Main Notes Page ───────────────────────────────────────────────────── */
 export default function NotesPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, hasHydrated } = useAuthStore();
   const [folders, setFolders] = useState<NoteFolder[]>([]);
   const [loading, setLoading] = useState(true);
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set());
@@ -482,9 +482,14 @@ export default function NotesPage() {
   const [previewNoteId, setPreviewNoteId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!user) { router.replace("/login"); return; }
-    fetchNotes();
-  }, [user]);
+    if (hasHydrated && !user) {
+      router.replace("/login");
+      return;
+    }
+    if (hasHydrated && user) {
+      fetchNotes();
+    }
+  }, [user, hasHydrated]);
 
   async function fetchNotes() {
     setLoading(true);

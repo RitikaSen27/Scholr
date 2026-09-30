@@ -35,25 +35,25 @@ const BADGE_CONFIG: Record<BadgeType, {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isNewUser, updateUser } = useAuthStore();
+  const { user, isNewUser, updateUser, hasHydrated } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
 
   // Guard: redirect if not authenticated
   useEffect(() => {
-    if (!user) router.replace("/login");
-  }, [user, router]);
+    if (hasHydrated && !user) router.replace("/login");
+  }, [user, hasHydrated, router]);
 
   // Refresh user data from backend on mount
   useEffect(() => {
-    if (!user) return;
+    if (!hasHydrated || !user) return;
     setRefreshing(true);
     api.get<UserType>("/api/auth/me")
       .then(({ data }) => updateUser(data))
       .catch(() => {/* silent */})
       .finally(() => setRefreshing(false));
-  }, []);
+  }, [hasHydrated, user]);
 
-  if (!user) return null;
+  if (!hasHydrated || !user) return null;
 
   const earnedBadgeTypes = new Set(user.badges.map((b) => b.badge_type));
 

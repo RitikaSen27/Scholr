@@ -21,7 +21,7 @@ const ALLOWED_TYPES = [
 
 export default function UploadPage() {
   const router = useRouter();
-  const { user, updateUser } = useAuthStore();
+  const { user, updateUser, hasHydrated } = useAuthStore();
 
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -58,10 +58,18 @@ export default function UploadPage() {
   });
 
   useEffect(() => {
-    if (!user) router.replace("/login");
-  }, [user, router]);
+    if (hasHydrated && !user) {
+      router.replace("/login");
+    }
+  }, [user, hasHydrated, router]);
 
-  if (!user) return null;
+  if (!hasHydrated || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-space, #0b0b14)" }}>
+        <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   function set(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
