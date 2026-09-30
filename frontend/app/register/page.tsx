@@ -79,22 +79,23 @@ export default function RegisterPage() {
     }
 
     // 2. Fallback to Client-side Tesseract WASM if details missing
-    if (!extracted.name || !extracted.college) {
+    if (!extracted.name || !extracted.college || !extracted.student_id) {
       try {
         const clientData = await parseIdCardClient(file);
         extracted = {
-          student_id: extracted.student_id || clientData.student_id || "0023",
+          student_id: extracted.student_id || clientData.student_id,
           name: extracted.name || clientData.name,
           college: extracted.college || clientData.college,
           stream: extracted.stream || clientData.stream,
-          year: extracted.year || clientData.year || "1st",
+          year: extracted.year || clientData.year,
         };
       } catch (clientErr) {
         console.warn("Client OCR error:", clientErr);
       }
     }
 
-    const isBlurryOrUnclear = !extracted.name && !extracted.college;
+    // A valid card must extract at least Name OR (College + Student ID)
+    const isBlurryOrUnclear = !extracted.name && (!extracted.college || !extracted.student_id);
 
     setForm((prev) => ({
       ...prev,
@@ -106,13 +107,13 @@ export default function RegisterPage() {
     }));
 
     if (isBlurryOrUnclear) {
-      const errMsg = "The picture is not clear. Please upload a clear picture of your ID card.";
+      const errMsg = "The picture is not clear or readable enough to extract your ID details. Please upload a clear, well-lit picture of your ID card, or enter your ID manually below.";
       setOcrError(errMsg);
-      toast.error(errMsg);
+      toast.error("Image is not clear. Please upload a clearer ID card picture.");
     } else {
       toast.success(`Extracted details for ${extracted.name || "ID Card"}`);
+      setStep(2);
     }
-    setStep(2);
     setUploading(false);
   }
 
